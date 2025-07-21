@@ -30,6 +30,7 @@ from backend.services.transit_fetcher import TransitDataFetcher
 from backend.services.background_updater import BackgroundUpdater
 from backend.api.routes import api_bp, init_api_routes
 from backend.api.test_routes import test_bp, init_test_routes
+from backend.api.websocket import init_websocket_handlers
 
 # GTFS Realtime imports
 try:
@@ -73,9 +74,10 @@ data_fetcher = TransitDataFetcher(API_KEYS)
 gtfs_processor = GTFSProcessor()
 background_updater = BackgroundUpdater(data_fetcher, socketio)
 
-# Initialize API routes with global instances
+# Initialize API routes and WebSocket handlers with global instances
 init_api_routes(data_fetcher, gtfs_processor)
 init_test_routes(data_fetcher, API_KEYS)
+init_websocket_handlers(data_fetcher, socketio)
 
 # Register API blueprints
 app.register_blueprint(api_bp)
@@ -146,25 +148,7 @@ def data_monitor_page():
 
 # Test API endpoints now handled by backend/api/test_routes.py blueprint
 
-# SocketIO events
-@socketio.on('connect')
-def handle_connect():
-    """Handle client connection"""
-    logger.info(f"Client connected: {request.sid}")
-
-    # Send current data to new client
-    if data_fetcher.vehicles:
-        emit('bulk_update', {
-            'vehicles': [vehicle.to_dict() for vehicle in data_fetcher.vehicles.values()],
-            'timestamp': data_fetcher.last_update.isoformat(),
-            'count': len(data_fetcher.vehicles)
-        })
-
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    """Handle client disconnection"""
-    logger.info(f"Client disconnected: {request.sid}")
+# WebSocket handlers now managed by backend/api/websocket.py
 
 
 if __name__ == '__main__':
