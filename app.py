@@ -84,44 +84,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(test_bp)
 
 
-# Helper functions for enhanced analysis
-def _extract_direction_from_vehicle(vehicle):
-    """Extract direction/destination from GTFS vehicle data"""
-    direction = ""
-
-    # Try trip headsign first
-    if vehicle.HasField('trip'):
-        if hasattr(vehicle.trip, 'trip_headsign'):
-            direction = vehicle.trip.trip_headsign
-        elif hasattr(vehicle.trip, 'direction_id'):
-            direction = "Inbound" if vehicle.trip.direction_id == 0 else "Outbound"
-
-    # Fallback to compass heading
-    if not direction and vehicle.HasField('position') and vehicle.position.HasField('bearing'):
-        bearing = vehicle.position.bearing
-        if 315 <= bearing < 45:
-            direction = "Northbound"
-        elif 45 <= bearing < 135:
-            direction = "Eastbound"
-        elif 135 <= bearing < 225:
-            direction = "Southbound"
-        elif 225 <= bearing < 315:
-            direction = "Westbound"
-
-    return direction
-
-
-def _get_transport_type_name(vehicle_type):
-    """Get friendly name for transport type"""
-    names = {
-        'muni-bus': 'Muni Buses',
-        'light-rail': 'Light Rail Lines',
-        'cable-car': 'Cable Car Lines',
-        'bart-train': 'BART Trains',
-        'ferry': 'Ferry Routes',
-        'bus': 'Bus Routes'
-    }
-    return names.get(vehicle_type, vehicle_type.title())
+# Helper functions moved to backend/api/test_routes.py where they are used
 
 
 # Flask routes
