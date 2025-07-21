@@ -1,0 +1,15 @@
+# SF Transit Tracker - Python Dependencies (Python 3.12 Compatible)
+# Install with: pip install -r requirements.txt
+
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+python-socketio==5.9.0
+requests==2.31.0
+gtfs-realtime-bindings==1.0.0
+protobuf==4.24.4
+python-dotenv==1.0.0
+xmltodict==0.13.0
+flask-cors==4.0.0
+
+# Note: Removed eventlet due to Python 3.12 compatibility issues
+# Using threading mode instead for better Mac M3 compatibility

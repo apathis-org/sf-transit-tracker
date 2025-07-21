@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Transit Tracker - TRON MODE</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/panels.css">
+    <link rel="stylesheet" href="/static/vehicles.css">
+    <link rel="stylesheet" href="/static/components.css">
+    <link rel="stylesheet" href="/static/animations.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle-container" style="position: fixed; top: 10px; right: 240px; z-index: 2000;">
+        <button id="theme-toggle" class="theme-toggle-btn">
+            🌙 Switch to Default Theme
+        </button>
+    </div>
+
+    <!-- Tron Mode Indicator -->
+    <div class="tron-indicator" id="tron-indicator">
+        TRON MODE
+    </div>
+
+    <div class="panel status-panel">
+        <div class="status-indicator" id="status">
+            <div class="status-dot connecting"></div>
+            CONNECTING...
+        </div>
+        <div style="font-size: 10px; margin-top: 4px; opacity: 0.8;" id="update-time">
+            LAST UPDATE: --:--
+        </div>
+        <div style="font-size: 10px; margin-top: 4px; opacity: 0.8;" id="route-status">
+            ROUTES: LOADING...
+        </div>
+    </div>
+
+    <div class="panel filter-panel">
+        <h3 style="margin-bottom: 10px;">🎛️ CONTROL MATRIX</h3>
+
+        <div class="filter-group">
+            <h4>SFMTA (San Francisco)</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-muni-bus" checked>
+                <span class="filter-name">Muni Buses</span>
+                <span class="filter-count" id="count-muni-bus">0</span>
+            </div>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-light-rail" checked>
+                <span class="filter-name">Light Rail</span>
+                <span class="filter-count" id="count-light-rail">0</span>
+            </div>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-cable-car">
+                <span class="filter-name">Cable Cars</span>
+                <span class="filter-count" id="count-cable-car">0</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h4>BART</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-bart-train">
+                <span class="filter-name">BART Trains</span>
+                <span class="filter-count" id="count-bart-train">0</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h4>Golden Gate</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-gg-bus">
+                <span class="filter-name">GG Buses</span>
+                <span class="filter-count" id="count-gg-bus">0</span>
+            </div>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-ferry">
+                <span class="filter-name">Ferries</span>
+                <span class="filter-count" id="count-ferry">0</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h4>AC Transit</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-ac-bus">
+                <span class="filter-name">AC Buses</span>
+                <span class="filter-count" id="count-ac-bus">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel info-panel">
+        <h3>🚌 TRANSIT GRID</h3>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-vehicles">0</div>
+                <div class="stat-label">VEHICLES</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-agencies">0</div>
+                <div class="stat-label">AGENCIES</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="route-aware-count">0</div>
+                <div class="stat-label">ROUTE-AWARE</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="routes-loaded">0</div>
+                <div class="stat-label">ROUTES LOADED</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="/static/routeManager.js"></script>
+    <script>
+        class SimpleTransitTracker {
+            constructor() {
+                this.map = null;
+                this.vehicles = new Map();
+                this.markers = new Map();
+                this.socket = null;
+                this.vehicleCounts = {};
+                this.routeManager = null;
+
+                // Animation system
+                this.vehicleStates = new Map();
+                this.animationFrame = null;
+                this.lastUpdateTime = Date.now();
+                this.lastAnimationTime = 0;
+                this.animationThrottle = 1000 / 30; // Cap at 30 FPS
+
+                // Theme management
+                this.currentTheme = 'tron';
+                this.tileLayers = null;
+                this.currentTileLayer = null;
+
+                // Performance constants
+                this.DEG_TO_RAD = Math.PI / 180;
+                this.METERS_PER_DEGREE_LAT = 111320;
+
+                // Simple filter mapping
+                this.filters = {
+                    'muni-bus': { agency: 'SFMTA', type: 'muni-bus' },
+                    'light-rail': { agency: 'SFMTA', type: 'light-rail' },
+                    'cable-car': { agency: 'SFMTA', type: 'cable-car' },
+                    'bart-train': { agency: 'BART', type: 'bart-train' },
+                    'gg-bus': { agency: 'Golden Gate', type: 'bus' },
+                    'ferry': { agency: 'Golden Gate', type: 'ferry' },
+                    'ac-bus': { agency: 'AC Transit', type: 'bus' }
+                };
+
+                this.init();
+                this.initializeRouteManager();
+                this.setupFilters();
+                this.setupThemeToggle();
+                this.connectSocket();
+                this.startAnimationLoop();
+            }
+
+            async init() {
+                // Initialize map
+                this.map = L.map('map').setView([37.7749, -122.4194], 12);
+                
+                // Start with Tron theme tiles
+                this.setMapTheme('tron');
+            }
+
+            setMapTheme(theme) {
+                // Initialize tile layers on first use (lazy loading)
+                if (!this.tileLayers) {
+                    this.tileLayers = {
+                        tron: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                            subdomains: 'abcd',
+                            maxZoom: 19
+                        }),
+                        default: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                            maxZoom: 19
+                        })
+                    };
+                }
+
+                // Remove current tile layer if exists
+                if (this.currentTileLayer) {
+                    this.map.removeLayer(this.currentTileLayer);
+                }
+
+                // Add new tile layer
+                this.currentTileLayer = this.tileLayers[theme];
+                this.currentTileLayer.addTo(this.map);
+                this.currentTheme = theme;
+            }
+
+            setupThemeToggle() {
+                const toggleBtn = document.getElementById('theme-toggle');
+                const body = document.body;
+                let switching = false;
+
+                toggleBtn.addEventListener('click', () => {
+                    if (switching) return;
+                    switching = true;
+                    
+                    // Pause animations during switch
+                    document.body.style.animationPlayState = 'paused';
+                    
+                    if (this.currentTheme === 'tron') {
+                        // Switch to default theme
+                        body.classList.add('default-theme');
+                        this.setMapTheme('default');
+                        toggleBtn.innerHTML = '✨ Switch to Tron Theme';
+                    } else {
+                        // Switch to Tron theme
+                        body.classList.remove('default-theme');
+                        this.setMapTheme('tron');
+                        toggleBtn.innerHTML = '🌙 Switch to Default Theme';
+                    }
+                    
+                    // Resume animations after transition
+                    setTimeout(() => {
+                        document.body.style.animationPlayState = 'running';
+                        switching = false;
+                    }, 300);
+                });
+            }
+
+            async initializeRouteManager() {
+                this.routeManager = new RouteManager();
+                const success = await this.routeManager.initialize();
+                document.getElementById('route-status').textContent =
+                    success ? `ROUTES: ${this.routeManager.routes.size} LOADED ✨` : 'ROUTES: FAILED TO LOAD';
+
+                document.getElementById('routes-loaded').textContent = this.routeManager.routes.size;
+            }
+
+            setupFilters() {
+                Object.keys(this.filters).forEach(filterId => {
+                    const checkbox = document.getElementById(`filter-${filterId}`);
+                    if (checkbox) {
+                        checkbox.addEventListener('change', () => {
+                            this.updateVisibleVehicles();
+                        });
+                    }
+                });
+            }
+
+            connectSocket() {
+                this.updateStatus('connecting');
+
+                this.socket = io();
+
+                this.socket.on('connect', () => {
+                    this.updateStatus('connected');
+                });
+
+                this.socket.on('bulk_update', (data) => {
+                    this.handleVehicleUpdate(data);
+                });
+
+                this.socket.on('disconnect', () => {
+                    this.updateStatus('error');
+                });
+
+                setTimeout(() => {
+                    if (!this.socket || !this.socket.connected) {
+                        this.fallbackToHTTP();
+                    }
+                }, 5000);
+            }
+
+            async fallbackToHTTP() {
+                this.updateStatus('connected');
+                setInterval(async () => {
+                    try {
+                        const response = await fetch('/api/vehicles');
+                        const data = await response.json();
+                        this.handleVehicleUpdate({ vehicles: data.vehicles });
+                    } catch (error) {
+                        console.error('HTTP fetch failed:', error);
+                    }
+                }, 30000);
+            }
+
+            handleVehicleUpdate(data) {
+                if (!data.vehicles || !Array.isArray(data.vehicles)) {
+                    console.log('No vehicle data received, keeping existing vehicles');
+                    return;
+                }
+
+                if (data.vehicles.length === 0) {
+                    console.log('Empty vehicle array received, keeping existing vehicles');
+                    return;
+                }
+
+                console.log(`Received ${data.vehicles.length} vehicles`);
+
+                const updateTime = Date.now();
+                const newVehicles = new Map();
+                const newVehicleCounts = {};
+                const existingVehicleIds = new Set(this.vehicles.keys());
+
+                data.vehicles.forEach(vehicle => {
+                    newVehicles.set(vehicle.id, vehicle);
+                    this.updateVehicleAnimationState(vehicle, updateTime);
+
+                    const filterKey = this.getFilterKey(vehicle);
+                    if (filterKey) {
+                        newVehicleCounts[filterKey] = (newVehicleCounts[filterKey] || 0) + 1;
+                    }
+                });
+
+                // Clean up removed vehicles
+                existingVehicleIds.forEach(vehicleId => {
+                    if (!newVehicles.has(vehicleId)) {
+                        this.vehicleStates.delete(vehicleId);
+                        const marker = this.markers.get(vehicleId);
+                        if (marker) {
+                            this.map.removeLayer(marker);
+                            this.markers.delete(vehicleId);
+                        }
+                    }
+                });
+
+                this.vehicles = newVehicles;
+                this.vehicleCounts = newVehicleCounts;
+                this.lastUpdateTime = updateTime;
+
+                this.updateCounts();
+                this.updateVisibleVehicles();
+                this.updateStats();
+
+                document.getElementById('update-time').textContent =
+                    `LAST UPDATE: ${new Date().toLocaleTimeString()}`;
+            }
+
+            updateVehicleAnimationState(vehicle, updateTime) {
+                const vehicleId = vehicle.id;
+                const existingState = this.vehicleStates.get(vehicleId);
+
+                if (!existingState) {
+                    this.vehicleStates.set(vehicleId, {
+                        id: vehicleId,
+                        startPos: { lat: vehicle.lat, lng: vehicle.lng },
+                        targetPos: { lat: vehicle.lat, lng: vehicle.lng },
+                        currentPos: { lat: vehicle.lat, lng: vehicle.lng },
+                        startSpeed: vehicle.speed || 0,
+                        targetSpeed: vehicle.speed || 0,
+                        currentSpeed: vehicle.speed || 0,
+                        startHeading: vehicle.heading || 0,
+                        targetHeading: vehicle.heading || 0,
+                        currentHeading: vehicle.heading || 0,
+                        animationStartTime: updateTime,
+                        isNew: true,
+                        lastIdleTime: updateTime
+                    });
+                } else {
+                    const projectedPos = this.calculateProjectedPosition(
+                        { lat: vehicle.lat, lng: vehicle.lng },
+                        vehicle.speed || 0,
+                        vehicle.heading || 0,
+                        30
+                    );
+
+                    existingState.startPos = { ...existingState.currentPos };
+                    existingState.targetPos = projectedPos;
+                    existingState.startSpeed = existingState.currentSpeed;
+                    existingState.targetSpeed = vehicle.speed || 0;
+                    existingState.startHeading = existingState.currentHeading;
+                    existingState.targetHeading = vehicle.heading || 0;
+                    existingState.animationStartTime = updateTime;
+                    existingState.isNew = false;
+                }
+            }
+
+            calculateProjectedPosition(currentPos, speed, heading, timeSeconds) {
+                if (!speed || speed < 1) {
+                    return currentPos;
+                }
+
+                const metersPerSecond = speed * 0.44704;
+                const distanceMeters = metersPerSecond * timeSeconds;
+                const headingRadians = (heading - 90) * this.DEG_TO_RAD;
+
+                const deltaLat = (distanceMeters * Math.sin(headingRadians)) / this.METERS_PER_DEGREE_LAT;
+                const cosLat = Math.cos(currentPos.lat * this.DEG_TO_RAD);
+                const deltaLng = (distanceMeters * Math.cos(headingRadians)) / (this.METERS_PER_DEGREE_LAT * cosLat);
+
+                return {
+                    lat: currentPos.lat + deltaLat,
+                    lng: currentPos.lng + deltaLng
+                };
+            }
+
+            getFilterKey(vehicle) {
+                for (const [key, filter] of Object.entries(this.filters)) {
+                    if (vehicle.agency === filter.agency && vehicle.type === filter.type) {
+                        return key;
+                    }
+                }
+                return null;
+            }
+
+            updateCounts() {
+                Object.keys(this.filters).forEach(filterId => {
+                    const countEl = document.getElementById(`count-${filterId}`);
+                    if (countEl) {
+                        const count = this.vehicleCounts[filterId] || 0;
+                        countEl.textContent = count;
+                        countEl.className = `filter-count ${count > 0 ? 'active' : 'inactive'}`;
+                    }
+                });
+            }
+
+            createMarker(vehicle) {
+                const state = this.vehicleStates.get(vehicle.id);
+                const position = state ? [state.currentPos.lat, state.currentPos.lng] : [vehicle.lat, vehicle.lng];
+
+                const icon = L.divIcon({
+                    className: 'transit-icon',
+                    html: `<div class="transit-icon ${vehicle.type}">${vehicle.route || '•'}</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+
+                const marker = L.marker(position, { icon })
+                    .bindPopup(this.createPopup(vehicle))
+                    .addTo(this.map);
+
+                if (state && state.isNew) {
+                    marker.getElement().style.opacity = 0;
+                }
+
+                this.markers.set(vehicle.id, marker);
+            }
+
+            updateVisibleVehicles() {
+                this.markers.forEach((marker, vehicleId) => {
+                    if (!this.vehicles.has(vehicleId)) {
+                        this.map.removeLayer(marker);
+                        this.markers.delete(vehicleId);
+                        this.vehicleStates.delete(vehicleId);
+                    }
+                });
+
+                const selectedFilters = Object.keys(this.filters).filter(filterId => {
+                    const checkbox = document.getElementById(`filter-${filterId}`);
+                    return checkbox && checkbox.checked;
+                });
+
+                this.vehicles.forEach(vehicle => {
+                    const filterKey = this.getFilterKey(vehicle);
+                    if (filterKey && selectedFilters.includes(filterKey)) {
+                        if (!this.markers.has(vehicle.id)) {
+                            this.createMarker(vehicle);
+                        }
+                    } else {
+                        const marker = this.markers.get(vehicle.id);
+                        if (marker) {
+                            this.map.removeLayer(marker);
+                            this.markers.delete(vehicle.id);
+                        }
+                    }
+                });
+            }
+
+            startAnimationLoop() {
+                const animate = () => {
+                    this.updateVehicleAnimations();
+                    this.animationFrame = requestAnimationFrame(animate);
+                };
+                animate();
+            }
+
+            updateVehicleAnimations() {
+                const currentTime = Date.now();
+                
+                // Throttle animation updates
+                if (currentTime - this.lastAnimationTime < this.animationThrottle) {
+                    return;
+                }
+                this.lastAnimationTime = currentTime;
+                
+                // Only animate if not in default theme or if animations are minimal
+                if (this.currentTheme === 'default') {
+                    // Minimal updates for default theme
+                    this.vehicleStates.forEach((state, vehicleId) => {
+                        const marker = this.markers.get(vehicleId);
+                        if (marker && state.currentPos) {
+                            marker.setLatLng([state.currentPos.lat, state.currentPos.lng]);
+                        }
+                    });
+                    return;
+                }
+                
+                const mapBounds = this.map.getBounds().pad(0.1); // Add padding
+
+                this.vehicleStates.forEach((state, vehicleId) => {
+                    const marker = this.markers.get(vehicleId);
+                    if (!marker) return;
+
+                    if (!mapBounds.contains([state.currentPos.lat, state.currentPos.lng])) {
+                        return;
+                    }
+
+                    const timeSinceStart = (currentTime - state.animationStartTime) / 1000;
+                    const animationDuration = 35;
+                    const progress = Math.min(timeSinceStart / animationDuration, 1);
+
+                    let newPos = this.calculateTraditionalPosition(state, timeSinceStart, animationDuration, progress);
+
+                    const speedTransitionDuration = 3;
+                    const speedProgress = Math.min(timeSinceStart / speedTransitionDuration, 1);
+                    const speedEaseProgress = 1 - Math.pow(1 - speedProgress, 2);
+                    state.currentSpeed = state.startSpeed + (state.targetSpeed - state.startSpeed) * speedEaseProgress;
+
+                    if (state.currentSpeed < 2) {
+                        const timeSinceIdle = (currentTime - state.lastIdleTime) / 1000;
+                        if (timeSinceIdle > 8) {
+                            const idleRadius = 0.00002;
+                            const randomAngle = Math.random() * 2 * Math.PI;
+                            newPos.lat += Math.sin(randomAngle) * idleRadius;
+                            newPos.lng += Math.cos(randomAngle) * idleRadius;
+                            state.lastIdleTime = currentTime;
+                        }
+                    }
+
+                    state.currentPos = newPos;
+                    marker.setLatLng([newPos.lat, newPos.lng]);
+
+                    if (state.isNew && timeSinceStart < 1) {
+                        const opacity = timeSinceStart;
+                        marker.getElement().style.opacity = opacity;
+                    } else if (state.isNew) {
+                        marker.getElement().style.opacity = 1;
+                        state.isNew = false;
+                    }
+                });
+            }
+
+            calculateTraditionalPosition(state, timeSinceStart, animationDuration, progress) {
+                if (progress < 1) {
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    return {
+                        lat: state.startPos.lat + (state.targetPos.lat - state.startPos.lat) * easeProgress,
+                        lng: state.startPos.lng + (state.targetPos.lng - state.startPos.lng) * easeProgress
+                    };
+                } else {
+                    const extraTime = timeSinceStart - animationDuration;
+                    const basePos = state.targetPos;
+
+                    const speedMph = state.currentSpeed || 15;
+                    const heading = state.currentHeading || 0;
+
+                    const metersPerSecond = speedMph * 0.44704;
+                    const distanceMeters = metersPerSecond * extraTime;
+                    const headingRadians = (heading - 90) * (Math.PI / 180);
+
+                    const deltaLat = (distanceMeters * Math.sin(headingRadians)) / 111320;
+                    const deltaLng = (distanceMeters * Math.cos(headingRadians)) / (111320 * Math.cos(basePos.lat * Math.PI / 180));
+
+                    const newPos = {
+                        lat: basePos.lat + deltaLat,
+                        lng: basePos.lng + deltaLng
+                    };
+
+                    const randomFactor = 0.00001 * Math.sin(extraTime * 0.5);
+                    newPos.lat += randomFactor;
+                    newPos.lng += randomFactor * 0.5;
+
+                    return newPos;
+                }
+            }
+
+            createPopup(vehicle) {
+                return `
+                    <div style="font-size: 12px; color: #00ffff; font-family: 'Courier New', monospace;">
+                        <strong style="color: #00ff88;">${vehicle.agency} ${vehicle.route || 'VEHICLE'}</strong><br>
+                        TYPE: ${vehicle.type}<br>
+                        SPEED: ${Math.round(vehicle.speed || 0)} MPH<br>
+                        UPDATED: ${new Date(vehicle.last_update || Date.now()).toLocaleTimeString()}
+                    </div>
+                `;
+            }
+
+            updateStats() {
+                const totalVehicles = Array.from(this.vehicles.values()).length;
+                const agencies = new Set();
+
+                this.vehicles.forEach(v => {
+                    agencies.add(v.agency);
+                });
+
+                document.getElementById('total-vehicles').textContent = totalVehicles;
+                document.getElementById('total-agencies').textContent = agencies.size;
+                document.getElementById('route-aware-count').textContent = '0';
+            }
+
+            updateStatus(status) {
+                const statusEl = document.getElementById('status');
+                const dot = statusEl.querySelector('.status-dot');
+
+                switch(status) {
+                    case 'connected':
+                        dot.className = 'status-dot connected';
+                        statusEl.innerHTML = '<div class="status-dot connected"></div>CONNECTED';
+                        break;
+                    case 'connecting':
+                        dot.className = 'status-dot connecting';
+                        statusEl.innerHTML = '<div class="status-dot connecting"></div>CONNECTING...';
+                        break;
+                    case 'error':
+                        dot.className = 'status-dot error';
+                        statusEl.innerHTML = '<div class="status-dot error"></div>DISCONNECTED';
+                        break;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.tracker = new SimpleTransitTracker();
+        });
+    </script>
+</body>
+</html>

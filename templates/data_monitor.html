@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Transit Data Monitor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00ff00;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            color: #00ff00;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-value.error {
+            color: #ff4444;
+        }
+
+        .stat-value.warning {
+            color: #ffaa00;
+        }
+
+        .log-container {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            height: 60vh;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .log-time {
+            color: #888;
+        }
+
+        .log-normal {
+            color: #00ff00;
+        }
+
+        .log-warning {
+            color: #ffaa00;
+        }
+
+        .log-error {
+            color: #ff4444;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: #333;
+            border: 1px solid #555;
+            color: #00ff00;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: #555;
+        }
+
+        .btn.active {
+            background: #00aa00;
+            color: #000;
+        }
+
+        .agency-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .agency-item {
+            background: #1a1a1a;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .agency-name {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .agency-count {
+            color: #888;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #00ff00;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 SF Transit Data Monitor</h1>
+        <p>Monitoring server data for 10 minutes to diagnose vehicle disappearing issue</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        <p style="margin-top: 8px; font-size: 12px;" id="status">Initializing...</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn active" id="startBtn" onclick="toggleMonitoring()">Start Monitoring</button>
+        <button class="btn" onclick="clearLogs()">Clear Logs</button>
+        <button class="btn" onclick="exportData()">Export CSV</button>
+        <span style="color: #888; margin-left: 20px;">Update Interval: 30s</span>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-label">Total Requests</div>
+            <div class="stat-value" id="totalRequests">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Current Vehicles</div>
+            <div class="stat-value" id="currentVehicles">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Average Vehicles</div>
+            <div class="stat-value" id="avgVehicles">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Low Data Events</div>
+            <div class="stat-value error" id="lowDataEvents">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Last Response Time</div>
+            <div class="stat-value" id="responseTime">0ms</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Monitoring Time</div>
+            <div class="stat-value" id="monitoringTime">00:00</div>
+        </div>
+    </div>
+
+    <div class="agency-breakdown" id="agencyBreakdown">
+        <!-- Agency stats will be populated here -->
+    </div>
+
+    <div class="log-container" id="logContainer">
+        <div class="log-entry log-normal">
+            <span class="log-time">[Ready]</span> Data monitor initialized. Click "Start Monitoring" to begin...
+        </div>
+    </div>
+
+    <script>
+        class DataMonitor {
+            constructor() {
+                this.isMonitoring = false;
+                this.startTime = null;
+                this.monitoringInterval = null;
+                this.data = [];
+                this.totalRequests = 0;
+                this.lowDataCount = 0;
+                this.vehicleCounts = [];
+                this.agencyStats = {};
+
+                // 10 minute monitoring duration
+                this.monitoringDuration = 10 * 60 * 1000; // 10 minutes in milliseconds
+            }
+
+            async start() {
+                if (this.isMonitoring) return;
+
+                this.isMonitoring = true;
+                this.startTime = Date.now();
+                this.totalRequests = 0;
+                this.lowDataCount = 0;
+                this.data = [];
+                this.vehicleCounts = [];
+                this.agencyStats = {};
+
+                this.log('Monitoring started - fetching data every 30 seconds for 10 minutes', 'normal');
+                this.updateStatus('🟢 Monitoring Active');
+
+                // Immediate first fetch
+                await this.fetchData();
+
+                // Set up interval
+                this.monitoringInterval = setInterval(async () => {
+                    await this.fetchData();
+
+                    // Check if 10 minutes elapsed
+                    const elapsed = Date.now() - this.startTime;
+                    if (elapsed >= this.monitoringDuration) {
+                        this.stop();
+                        this.log('✅ Monitoring completed - 10 minutes elapsed', 'normal');
+                        this.generateSummary();
+                    }
+                }, 30000); // 30 seconds
+
+                this.updateUI();
+            }
+
+            stop() {
+                if (!this.isMonitoring) return;
+
+                this.isMonitoring = false;
+                if (this.monitoringInterval) {
+                    clearInterval(this.monitoringInterval);
+                    this.monitoringInterval = null;
+                }
+
+                this.updateStatus('⏹️ Monitoring Stopped');
+                document.getElementById('startBtn').textContent = 'Start Monitoring';
+                document.getElementById('startBtn').classList.add('active');
+            }
+
+            async fetchData() {
+                const fetchStart = Date.now();
+
+                try {
+                    const response = await fetch('/api/vehicles');
+                    const responseTime = Date.now() - fetchStart;
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.processData(data, responseTime);
+
+                } catch (error) {
+                    this.log(`❌ Fetch error: ${error.message}`, 'error');
+                    this.processData(null, Date.now() - fetchStart);
+                }
+            }
+
+            processData(data, responseTime) {
+                this.totalRequests++;
+                const timestamp = new Date().toLocaleTimeString();
+                const vehicleCount = data?.vehicles?.length || 0;
+
+                // Store data point
+                const dataPoint = {
+                    timestamp: Date.now(),
+                    vehicleCount,
+                    responseTime,
+                    agencies: {}
+                };
+
+                if (data?.vehicles) {
+                    // Count vehicles by agency
+                    const agencyCounts = {};
+                    data.vehicles.forEach(vehicle => {
+                        const agency = vehicle.agency || 'Unknown';
+                        agencyCounts[agency] = (agencyCounts[agency] || 0) + 1;
+                    });
+
+                    dataPoint.agencies = agencyCounts;
+                    this.agencyStats = agencyCounts;
+                }
+
+                this.data.push(dataPoint);
+                this.vehicleCounts.push(vehicleCount);
+
+                // Detect low data events (threshold: less than 1000 vehicles)
+                const isLowData = vehicleCount < 1000 && vehicleCount > 0;
+                if (isLowData) {
+                    this.lowDataCount++;
+                }
+
+                // Log the event
+                let logClass = 'normal';
+                let logMessage = `[${timestamp}] Received ${vehicleCount} vehicles (${responseTime}ms)`;
+
+                if (vehicleCount === 0) {
+                    logClass = 'error';
+                    logMessage += ' ⚠️ NO DATA';
+                } else if (isLowData) {
+                    logClass = 'warning';
+                    logMessage += ' ⚠️ LOW DATA (possible partial response)';
+                } else if (vehicleCount > 3000) {
+                    logMessage += ' ✅ NORMAL';
+                }
+
+                if (data?.vehicles) {
+                    const agencyList = Object.entries(dataPoint.agencies)
+                        .map(([agency, count]) => `${agency}:${count}`)
+                        .join(', ');
+                    logMessage += ` | Agencies: ${agencyList}`;
+                }
+
+                this.log(logMessage, logClass);
+                this.updateUI();
+            }
+
+            updateUI() {
+                // Update stats
+                document.getElementById('totalRequests').textContent = this.totalRequests;
+                document.getElementById('currentVehicles').textContent =
+                    this.vehicleCounts[this.vehicleCounts.length - 1] || 0;
+
+                const avgVehicles = this.vehicleCounts.length > 0
+                    ? Math.round(this.vehicleCounts.reduce((a, b) => a + b, 0) / this.vehicleCounts.length)
+                    : 0;
+                document.getElementById('avgVehicles').textContent = avgVehicles;
+                document.getElementById('lowDataEvents').textContent = this.lowDataCount;
+
+                if (this.data.length > 0) {
+                    const lastResponse = this.data[this.data.length - 1];
+                    document.getElementById('responseTime').textContent = `${lastResponse.responseTime}ms`;
+                }
+
+                // Update monitoring time
+                if (this.startTime) {
+                    const elapsed = Date.now() - this.startTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    document.getElementById('monitoringTime').textContent =
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                    // Update progress bar
+                    const progress = Math.min(elapsed / this.monitoringDuration * 100, 100);
+                    document.getElementById('progress').style.width = `${progress}%`;
+                }
+
+                // Update agency breakdown
+                this.updateAgencyBreakdown();
+            }
+
+            updateAgencyBreakdown() {
+                const container = document.getElementById('agencyBreakdown');
+                container.innerHTML = '';
+
+                Object.entries(this.agencyStats).forEach(([agency, count]) => {
+                    const div = document.createElement('div');
+                    div.className = 'agency-item';
+                    div.innerHTML = `
+                        <div class="agency-name">${agency}</div>
+                        <div class="agency-count">${count} vehicles</div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            updateStatus(status) {
+                document.getElementById('status').textContent = status;
+            }
+
+            log(message, type = 'normal') {
+                const container = document.getElementById('logContainer');
+                const div = document.createElement('div');
+                div.className = `log-entry log-${type}`;
+                div.innerHTML = message;
+
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+
+                // Keep only last 100 log entries
+                const entries = container.querySelectorAll('.log-entry');
+                if (entries.length > 100) {
+                    entries[0].remove();
+                }
+            }
+
+            generateSummary() {
+                this.log('\n📊 MONITORING SUMMARY:', 'normal');
+                this.log(`Total requests: ${this.totalRequests}`, 'normal');
+                this.log(`Low data events: ${this.lowDataCount} (${((this.lowDataCount/this.totalRequests)*100).toFixed(1)}%)`, 'warning');
+
+                const avgVehicles = this.vehicleCounts.length > 0
+                    ? Math.round(this.vehicleCounts.reduce((a, b) => a + b, 0) / this.vehicleCounts.length)
+                    : 0;
+                this.log(`Average vehicles: ${avgVehicles}`, 'normal');
+
+                const minVehicles = Math.min(...this.vehicleCounts);
+                const maxVehicles = Math.max(...this.vehicleCounts);
+                this.log(`Vehicle range: ${minVehicles} - ${maxVehicles}`, 'normal');
+
+                if (this.lowDataCount > 0) {
+                    this.log('⚠️ Server appears to be sending partial data intermittently', 'warning');
+                    this.log('This confirms the issue is SERVER-SIDE, not client-side', 'warning');
+                } else {
+                    this.log('✅ No partial data detected - issue may be intermittent', 'normal');
+                }
+            }
+
+            exportCSV() {
+                const headers = ['Timestamp', 'Vehicle Count', 'Response Time (ms)', 'Agencies'];
+                const rows = this.data.map(point => [
+                    new Date(point.timestamp).toISOString(),
+                    point.vehicleCount,
+                    point.responseTime,
+                    Object.entries(point.agencies).map(([agency, count]) => `${agency}:${count}`).join(';')
+                ]);
+
+                const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sf-transit-monitor-${new Date().toISOString().slice(0,16)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                this.log('📁 Data exported to CSV', 'normal');
+            }
+
+            clearLogs() {
+                document.getElementById('logContainer').innerHTML =
+                    '<div class="log-entry log-normal"><span class="log-time">[Cleared]</span> Log cleared</div>';
+            }
+        }
+
+        // Global monitor instance
+        const monitor = new DataMonitor();
+
+        function toggleMonitoring() {
+            const btn = document.getElementById('startBtn');
+            if (monitor.isMonitoring) {
+                monitor.stop();
+            } else {
+                monitor.start();
+                btn.textContent = 'Stop Monitoring';
+                btn.classList.remove('active');
+            }
+        }
+
+        function clearLogs() {
+            monitor.clearLogs();
+        }
+
+        function exportData() {
+            monitor.exportCSV();
+        }
+
+        // Auto-start monitoring on page load
+        setTimeout(() => {
+            toggleMonitoring();
+        }, 1000);
+    </script>
+</body>
+</html>

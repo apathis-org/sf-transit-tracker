@@ -1,0 +1,177 @@
+Agencies:
+ {
+  "copyright": "All data copyright agencies listed below and Umo IQ 2025.",
+  "agency": [
+    {
+      "tag": "jhu-apl",
+      "regionTitle": "Maryland",
+      "title": "APL"
+    },
+    {
+      "tag": "ccrta",
+      "shortTitle": "CCRTA",
+      "regionTitle": "Massachusetts",
+      "title": "Cape Cod Regional Transit Authority"
+    },
+    {
+      "tag": "chapel-hill",
+      "shortTitle": "Chapel Hill",
+      "regionTitle": "North Carolina",
+      "title": "Chapel Hill Transit"
+    },
+    {
+      "tag": "west-hollywood",
+      "regionTitle": "California-Southern",
+      "title": "City of West Hollywood"
+    },
+    {
+      "tag": "da",
+      "regionTitle": "New York",
+      "title": "Downtown Connection"
+    },
+    {
+      "tag": "dumbarton",
+      "shortTitle": "Dumbarton Exp",
+      "regionTitle": "California-Northern",
+      "title": "Dumbarton Express"
+    },
+    {
+      "tag": "dumbarton-gtfs",
+      "shortTitle": "Dumbarton Exp",
+      "regionTitle": "California-Northern",
+      "title": "Dumbarton Express"
+    },
+    {
+      "tag": "charles-river",
+      "shortTitle": "Charles River EZRide",
+      "regionTitle": "Massachusetts",
+      "title": "EZRide - Charles River TMA"
+    },
+    {
+      "tag": "escalon",
+      "shortTitle": "eTrans",
+      "regionTitle": "California-Northern",
+      "title": "Escalon eTrans"
+    },
+    {
+      "tag": "glendale",
+      "regionTitle": "California-Southern",
+      "title": "Glendale Beeline"
+    },
+    {
+      "tag": "glendale-beeline",
+      "regionTitle": "California-Southern",
+      "title": "Glendale Beeline GTFS"
+    },
+    {
+      "tag": "glendale-beeline-test",
+      "regionTitle": "California-Southern",
+      "title": "Glendale Beeline GTFS - Test"
+    },
+    {
+      "tag": "indianapolis-air",
+      "regionTitle": "Indiana",
+      "title": "Indianapolis International Airport"
+    },
+    {
+      "tag": "lga",
+      "regionTitle": "New York",
+      "title": "LaGuardia Airport Shuttle"
+    },
+    {
+      "tag": "lincolnlab",
+      "regionTitle": "Massachusetts",
+      "title": "MIT Lincoln Lab Shuttle"
+    },
+    {
+      "tag": "mit",
+      "shortTitle": "MIT",
+      "regionTitle": "Massachusetts",
+      "title": "Massachusetts Institute of Technology"
+    },
+    {
+      "tag": "nova-se",
+      "shortTitle": "Nova",
+      "regionTitle": "Florida",
+      "title": "Nova Southeastern University"
+    },
+    {
+      "tag": "omnitrans",
+      "regionTitle": "California-Southern",
+      "title": "Omnitrans"
+    },
+    {
+      "tag": "pvpta",
+      "regionTitle": "California-Southern",
+      "title": "Palos Verdes Transit"
+    },
+    {
+      "tag": "portland-sc",
+      "regionTitle": "Oregon",
+      "title": "Portland Streetcar"
+    },
+    {
+      "tag": "roosevelt",
+      "regionTitle": "New York",
+      "title": "Roosevelt Island"
+    },
+    {
+      "tag": "seattle-sc",
+      "regionTitle": "Washington",
+      "title": "Seattle Streetcar"
+    },
+    {
+      "tag": "stl",
+      "shortTitle": "Laval",
+      "regionTitle": "Quebec",
+      "title": "Societe de transport de Laval"
+    },
+    {
+      "tag": "sct",
+      "regionTitle": "California-Northern",
+      "title": "Sonoma County Transit"
+    },
+    {
+      "tag": "geg",
+      "regionTitle": "Washington",
+      "title": "Spokane International Airport"
+    },
+    {
+      "tag": "tahoe",
+      "regionTitle": "California-Northern",
+      "title": "Tahoe Truckee Area Regional Transit"
+    },
+    {
+      "tag": "ttc",
+      "shortTitle": "Toronto TTC",
+      "regionTitle": "Ontario",
+      "title": "Toronto Transit Commission"
+    },
+    {
+      "tag": "unitrans",
+      "shortTitle": "Unitrans",
+      "regionTitle": "California-Northern",
+      "title": "Unitrans ASUCD/City of Davis"
+    },
+    {
+      "tag": "ucb",
+      "shortTitle": "UC Berkeley",
+      "regionTitle": "California-Northern",
+      "title": "University of California Berkeley"
+    },
+    {
+      "tag": "wku",
+      "regionTitle": "Kentucky",
+      "title": "Western Kentucky University"
+    },
+    {
+      "tag": "winston-salem",
+      "regionTitle": "North Carolina",
+      "title": "Winston-Salem"
+    }
+  ]
+}
+
+Found 0 routes. Sample:
+ []
+No routes found for agency.

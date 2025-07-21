@@ -1,0 +1,84 @@
+/* SF Transit Tracker - UI Components */
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    background: linear-gradient(45deg, rgba(0,255,255,0.2), rgba(0,128,255,0.2));
+    border: 1px solid #00ffff;
+    color: #00ffff;
+    padding: 8px 16px;
+    border-radius: 0px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    text-shadow: 0 0 10px rgba(0,255,255,0.8);
+    box-shadow: 0 0 20px rgba(0,255,255,0.3);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.theme-toggle-btn:hover {
+    background: linear-gradient(45deg, rgba(0,255,255,0.4), rgba(0,128,255,0.4));
+    box-shadow: 0 0 30px rgba(0,255,255,0.5);
+    transform: scale(1.05);
+}
+
+/* Tron Mode Indicator */
+.tron-indicator {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    z-index: 2000;
+    background: linear-gradient(45deg, rgba(0,255,255,0.1), rgba(0,128,255,0.1));
+    border: 1px solid #00ffff;
+    padding: 10px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    color: #00ffff;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    text-shadow: 0 0 10px rgba(0,255,255,0.8);
+    letter-spacing: 2px;
+    box-shadow: 0 0 20px rgba(0,255,255,0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,255,255,0.2);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #00ffff, #0080ff);
+    box-shadow: 0 0 10px rgba(0,255,255,0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #40ffff, #40a0ff);
+    box-shadow: 0 0 15px rgba(0,255,255,0.8);
+}
+
+/* Leaflet Popup Styling */
+.leaflet-popup-content-wrapper {
+    background: linear-gradient(135deg, rgba(0,6,17,0.95) 0%, rgba(0,15,35,0.95) 100%) !important;
+    border: 1px solid #00ffff !important;
+    border-radius: 0px !important;
+    box-shadow: 0 0 20px rgba(0,255,255,0.5) !important;
+    color: #00ffff !important;
+    font-family: 'Courier New', monospace !important;
+}
+
+.leaflet-popup-content {
+    color: #00ffff !important;
+    font-size: 12px !important;
+}
+
+.leaflet-popup-tip {
+    background: #00ffff !important;
+    box-shadow: 0 0 10px rgba(0,255,255,0.5) !important;
+}
