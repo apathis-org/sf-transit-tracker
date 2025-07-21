@@ -23,6 +23,9 @@ from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from dotenv import load_dotenv
 
+# Import models
+from backend.models.vehicle import Vehicle
+
 # GTFS Realtime imports
 try:
     from google.transit import gtfs_realtime_pb2
@@ -53,23 +56,6 @@ API_KEYS = {
     'BART': os.getenv('BART_API_KEY', 'YOUR_BART_API_KEY')
 }
 
-
-@dataclass
-class Vehicle:
-    """Vehicle data structure"""
-    id: str
-    type: str
-    route: str
-    lat: float
-    lng: float
-    heading: float = 0.0
-    speed: float = 0.0
-    agency: str = ''
-    destination: str = ''
-    last_update: str = ''
-
-    def to_dict(self):
-        return asdict(self)
 
 
 class TransitDataFetcher:
