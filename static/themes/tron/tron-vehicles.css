@@ -1,0 +1,76 @@
+/* SF Transit Tracker - Vehicle Icon Styles */
+
+/* Vehicle Icons */
+.transit-icon {
+    border-radius: var(--icon-radius);
+    border: 2px solid var(--primary-color);
+    font-weight: bold;
+    font-size: 10px;
+    text-align: center;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    min-height: 20px;
+    transition: transform 0.3s ease;
+    box-shadow: var(--icon-shadow);
+    animation: vehiclePulse calc(2s * var(--enable-pulse)) ease-in-out infinite alternate;
+    will-change: transform;
+}
+
+.transit-icon:hover {
+    transform: scale(1.2);
+    box-shadow:
+        0 0 30px rgba(0,255,255,1),
+        inset 0 0 30px rgba(0,255,255,0.5);
+}
+
+/* Vehicle Type Colors */
+.muni-bus {
+    background: linear-gradient(45deg, #ff0040, #ff4080);
+    border-color: #ff0040;
+    box-shadow:
+        0 0 15px rgba(255,0,64,0.8),
+        inset 0 0 15px rgba(255,0,64,0.3);
+}
+
+.bart-train {
+    background: linear-gradient(45deg, #0099ff, #40b3ff);
+    border-color: #0099ff;
+    box-shadow:
+        0 0 15px rgba(0,153,255,0.8),
+        inset 0 0 15px rgba(0,153,255,0.3);
+}
+
+.cable-car {
+    background: linear-gradient(45deg, #ff8800, #ffaa40);
+    border-color: #ff8800;
+    box-shadow:
+        0 0 15px rgba(255,136,0,0.8),
+        inset 0 0 15px rgba(255,136,0,0.3);
+}
+
+.light-rail {
+    background: linear-gradient(45deg, #ff6600, #ff9940);
+    border-color: #ff6600;
+    box-shadow:
+        0 0 15px rgba(255,102,0,0.8),
+        inset 0 0 15px rgba(255,102,0,0.3);
+}
+
+.ferry {
+    background: linear-gradient(45deg, #00ff88, #40ffaa);
+    border-color: #00ff88;
+    box-shadow:
+        0 0 15px rgba(0,255,136,0.8),
+        inset 0 0 15px rgba(0,255,136,0.3);
+}
+
+.bus {
+    background: linear-gradient(45deg, #00ff00, #40ff40);
+    border-color: #00ff00;
+    box-shadow:
+        0 0 15px rgba(0,255,0,0.8),
+        inset 0 0 15px rgba(0,255,0,0.3);
+}

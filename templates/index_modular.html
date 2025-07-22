@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Transit Tracker - Route-Aware</title>
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/filters.css">
+    <link rel="stylesheet" href="/static/css/status.css">
+    <link rel="stylesheet" href="/static/vehicles.css">
+    <link rel="stylesheet" href="/static/panels.css">
+    <link rel="stylesheet" href="/static/components.css">
+    <link rel="stylesheet" href="/static/animations.css">
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="panel status-panel">
+        <div class="status-indicator" id="status">
+            <div class="status-dot connecting"></div>
+            Connecting...
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-vehicles">0</div>
+                <div class="stat-label">Active Vehicles</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-agencies">0</div>
+                <div class="stat-label">Agencies</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel filter-panel">
+        <div class="filter-group">
+            <h4>🚌 Muni Buses</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-muni-bus" checked>
+                <span class="filter-name">Regular Buses</span>
+                <span class="filter-count inactive" id="count-muni-bus">0</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h4>🚊 Muni Rail</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-light-rail" checked>
+                <span class="filter-name">Light Rail (J, N, etc.)</span>
+                <span class="filter-count inactive" id="count-light-rail">0</span>
+            </div>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-cable-car" checked>
+                <span class="filter-name">Cable Cars</span>
+                <span class="filter-count inactive" id="count-cable-car">0</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h4>🚇 BART</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-bart-train" checked>
+                <span class="filter-name">BART Trains</span>
+                <span class="filter-count inactive" id="count-bart-train">0</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h4>🌉 Bay Area</h4>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-gg-bus" checked>
+                <span class="filter-name">Golden Gate Buses</span>
+                <span class="filter-count inactive" id="count-gg-bus">0</span>
+            </div>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-ferry" checked>
+                <span class="filter-name">Ferries</span>
+                <span class="filter-count inactive" id="count-ferry">0</span>
+            </div>
+            <div class="filter-item">
+                <input type="checkbox" id="filter-ac-bus" checked>
+                <span class="filter-name">AC Transit Buses</span>
+                <span class="filter-count inactive" id="count-ac-bus">0</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+            <div style="font-size: 10px; color: #888;" id="route-status">
+                Routes: Loading...
+            </div>
+        </div>
+    </div>
+
+    <div class="panel info-panel">
+        <h4 style="margin-bottom: 10px;">🗺️ SF Transit Tracker</h4>
+        <div style="font-size: 11px; line-height: 1.4;">
+            Real-time tracking of San Francisco area transit vehicles.
+        </div>
+        <div class="stats" style="margin-top: 15px;">
+            <div class="stat-item">
+                <div class="stat-value" id="routes-loaded">0</div>
+                <div class="stat-label">Routes Loaded</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="route-aware-count">0</div>
+                <div class="stat-label">Route-Aware</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <!-- Modular JavaScript -->
+    <script src="/static/routeManager.js"></script>
+    <script src="/static/js/TransitTracker.js"></script>
+    
+    <!-- Application Initialization -->
+    <script>
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.tracker = new TransitTracker();
+        });
+    </script>
+</body>
+</html>

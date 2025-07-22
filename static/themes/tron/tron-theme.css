@@ -1,0 +1,126 @@
+/* SF Transit Tracker - Main Styles */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+/* CSS Variables for Theme Switching */
+:root {
+    /* Colors */
+    --primary-color: #00ffff;
+    --secondary-color: #00ff88;
+    --background-gradient: linear-gradient(45deg, #000611 0%, #0a0a23 25%, #000611 50%, #0f0f23 75%, #000611 100%);
+    --panel-bg: linear-gradient(135deg, rgba(0,6,17,0.95) 0%, rgba(0,15,35,0.95) 100%);
+    --panel-border: #00ffff;
+    --text-color: #00ffff;
+    --text-secondary: #b0e0ff;
+    --filter-header: #00ff88;
+    --stat-value: #00ffff;
+    
+    /* Animations */
+    --enable-gradient: 1;
+    --enable-grid: 1;
+    --enable-glow: 1;
+    --enable-pulse: 1;
+    
+    /* Shapes */
+    --border-radius: 0px;
+    --icon-radius: 0px;
+    
+    /* Effects */
+    --text-shadow: 0 0 10px rgba(0,255,255,0.8);
+    --box-shadow: 0 0 20px rgba(0,255,255,0.3);
+    --icon-shadow: 0 0 15px rgba(0,255,255,0.8), inset 0 0 15px rgba(0,255,255,0.3);
+}
+
+/* Default Theme Variables */
+body.default-theme {
+    --primary-color: #4facfe;
+    --secondary-color: #4CAF50;
+    --background-gradient: #000;
+    --panel-bg: rgba(0,0,0,0.9);
+    --panel-border: rgba(255,255,255,0.1);
+    --text-color: white;
+    --text-secondary: white;
+    --filter-header: #4facfe;
+    --stat-value: #4facfe;
+    
+    --enable-gradient: 0;
+    --enable-grid: 0;
+    --enable-glow: 0;
+    --enable-pulse: 0;
+    
+    --border-radius: 8px;
+    --icon-radius: 50%;
+    
+    --text-shadow: none;
+    --box-shadow: none;
+    --icon-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Base Layout */
+body {
+    font-family: 'Courier New', 'Monaco', monospace;
+    background: var(--background-gradient);
+    background-size: 400% 400%;
+    animation: tronGradient calc(20s * var(--enable-gradient)) ease infinite;
+    color: var(--text-color);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Tron Grid Overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image:
+        linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 1;
+    animation: gridPulse calc(4s * var(--enable-grid)) ease-in-out infinite alternate;
+    opacity: var(--enable-grid);
+}
+
+#map {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    z-index: 2;
+}
+
+/* Headers */
+h3 {
+    color: var(--primary-color);
+    text-shadow: var(--text-shadow);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Theme Overrides */
+body.default-theme .tron-indicator {
+    display: none;
+}
+
+body.default-theme .panel::before {
+    display: none;
+}
+
+body.default-theme .transit-icon {
+    border-color: white;
+}
+
+body.default-theme .filter-group h4,
+body.default-theme h3 {
+    text-transform: none;
+    letter-spacing: normal;
+}

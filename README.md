@@ -61,7 +61,7 @@ cp .env.example .env
 python app.py
 ```
 
-6. Open your browser to http://localhost:5000
+6. Open your browser to http://localhost:5001
 
 ## 🔧 Configuration
 
@@ -75,58 +75,78 @@ BART_API_KEY=your_bart_api_key_here
 # Server Configuration
 DEBUG=True
 SECRET_KEY=your-secret-key-here
-PORT=5000
+PORT=5001
 ```
 
 ## 📁 Project Structure
 
 ```
 sf-transit-tracker/
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── .env.example          # Environment variables template
-├── CLAUDE.md             # AI assistant instructions
-├── static/               # Frontend assets
-│   ├── main.css         # Core styles
-│   ├── animations.css   # Animation definitions
-│   ├── components.css   # UI component styles
-│   ├── panels.css       # Control panel styles
-│   ├── vehicles.css     # Vehicle marker styles
-│   └── routeManager.js  # GTFS route management
-├── templates/            # HTML templates
-│   ├── index.html       # Main application
-│   ├── test.html        # API testing dashboard
-│   └── data_monitor.html # Real-time data monitor
-├── tests/                # Test scripts
-│   ├── enhanced_test_apis.py # Comprehensive API tests
-│   ├── test_511.py          # 511.org connectivity test
-│   └── nextmuni_api.py      # NextMuni API utilities
-└── data/                 # GTFS data storage (auto-created)
+├── app.py                      # Main Flask application (modular, ~100 lines)
+├── requirements.txt            # Python dependencies
+├── .env.example               # Environment variables template
+├── CLAUDE.md                  # AI assistant instructions
+├── backend/                   # Backend modules (NEW - modular architecture)
+│   ├── models/
+│   │   ├── vehicle.py        # Vehicle dataclass & models
+│   │   └── gtfs.py          # GTFS data processing
+│   ├── services/
+│   │   ├── transit_fetcher.py    # API data fetching (511.org, BART)
+│   │   └── background_updater.py # Background update cycles
+│   └── api/
+│       ├── routes.py        # Main API endpoints (/api/*)
+│       ├── test_routes.py   # Test endpoints (/test/*)
+│       └── websocket.py     # WebSocket handlers
+├── static/                    # Frontend assets
+│   ├── js/
+│   │   └── TransitTracker.js    # Modular JavaScript class (NEW)
+│   ├── themes/                  # Theme system (NEW)
+│   │   ├── default/
+│   │   │   └── default-theme.css  # Clean default styling
+│   │   └── tron/                  # TRON theme (preserved for future)
+│   │       ├── tron-theme.css
+│   │       ├── tron-vehicles.css
+│   │       └── tron-animations.css
+│   └── routeManager.js          # GTFS route management
+├── templates/                   # HTML templates
+│   ├── index.html              # Original monolithic version
+│   ├── index_clean.html        # NEW - Modular version (default route)
+│   ├── test.html               # API testing dashboard
+│   └── data_monitor.html       # Real-time data monitor
+├── tests/                      # Test scripts
+│   ├── enhanced_test_apis.py   # Comprehensive API tests
+│   └── test_511.py             # 511.org connectivity test
+├── docs/                       # Documentation
+│   ├── REFACTORING_PLAN.md     # Detailed refactoring progress
+│   └── TESTING_STRATEGY.md     # Testing approach
+└── data/                       # GTFS data storage (auto-created)
 ```
 
 ## 🎨 Themes
 
 The application supports two visual themes:
 
-### TRON Theme (Default)
+### Default Theme (Current)
+- Clean, professional styling matching original implementation
+- Standard OpenStreetMap tiles
+- Rounded corners and soft shadows
+- Optimized for readability and performance
+
+### TRON Theme (Future Integration)
 - Cyberpunk aesthetic with glowing effects
-- Dark map tiles with neon accents
+- Dark map tiles with neon accents  
 - Animated grid background
 - Sharp, futuristic UI elements
+- **Status**: Preserved in `static/themes/tron/` for Phase 4 implementation
 
-### Default Theme
-- Clean, professional styling
-- Light map tiles
-- Rounded corners and soft shadows
-- Better for daytime viewing
-
-Toggle themes using the button in the top-right corner.
+**Current Version**: The application currently uses the clean default theme. TRON theme integration is planned for a future phase.
 
 ## 🔌 API Endpoints
 
 ### HTTP Endpoints
-- `GET /` - Main application interface
-- `GET /api/vehicles` - Current vehicle positions
+- `GET /` - Main application interface (modular version)
+- `GET /original` - Original monolithic version (for comparison)
+- `GET /api/vehicles` - Current vehicle positions with individual timestamps
 - `GET /api/routes` - GTFS route shapes
 - `GET /api/refresh-routes` - Trigger GTFS data refresh
 - `GET /api/health` - System health check
@@ -150,13 +170,36 @@ python tests/enhanced_test_apis.py
 python tests/test_511.py
 ```
 
-Or use the web-based testing dashboard at http://localhost:5000/test
+Or use the web-based testing dashboard at http://localhost:5001/test
 
 ## 📊 Data Sources
 
 - **511.org**: Primary source for SF Muni, Golden Gate Transit, AC Transit
+  - **Individual Vehicle Timestamps**: Now extracts actual GTFS timestamp per vehicle (not bulk processing time)
+  - **Route Information**: Uses vehicle label field for accurate route number display
+  - **Regional Filtering**: Properly excludes duplicate Regional (RG) vehicles
 - **BART API**: Real-time train positions (simulated from ETD data)
 - **GTFS Static Data**: Route shapes from multiple sources with fallback chain
+
+## 🆕 Recent Improvements (Phase 2 Refactoring)
+
+### Architecture Enhancements
+- **Modular Backend**: Split monolithic `app.py` (1500+ lines) into focused modules (~100 lines)
+- **Organized Frontend**: Extracted JavaScript into maintainable `TransitTracker` class
+- **Theme System**: Separated TRON and default themes for future customization
+- **Port Change**: Moved to port 5001 to avoid macOS AirPlay conflicts
+
+### Animation System
+- **Physics-Based Movement**: Restored complete vehicle animation with speed/heading calculations
+- **35-Second Interpolation**: Smooth movement between data updates with predictive positioning
+- **Viewport Optimization**: Improved performance with smart bounds checking
+- **Fade Effects**: New vehicles appear with smooth fade-in animation
+
+### Data Quality
+- **Individual Timestamps**: Vehicle popups show actual GTFS reporting times (not bulk fetch time)
+- **Accurate Route Numbers**: Fixed empty route display using vehicle label data
+- **Proper Vehicle Counting**: Eliminated duplicate regional vehicles for accurate filter counts
+- **Enhanced Type Mapping**: Better distinction between transit agency vehicle types
 
 ## 🚀 Performance Optimizations
 

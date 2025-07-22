@@ -1,0 +1,44 @@
+/* SF Transit Tracker - Filter Panel Styles */
+
+.filter-group {
+    margin-bottom: 15px;
+}
+
+.filter-group h4 {
+    color: #4facfe;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 12px;
+}
+
+.filter-item input {
+    margin-right: 8px;
+}
+
+.filter-name {
+    flex: 1;
+}
+
+.filter-count {
+    background: rgba(255,255,255,0.1);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+.filter-count.active {
+    background: rgba(76, 175, 80, 0.3);
+    color: #4CAF50;
+}
+
+.filter-count.inactive {
+    background: rgba(244, 67, 54, 0.3);
+    color: #f44336;
+}

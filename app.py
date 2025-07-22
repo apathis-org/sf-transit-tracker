@@ -91,6 +91,11 @@ app.register_blueprint(test_bp)
 @app.route('/')
 def index():
     """Serve the main page"""
+    return render_template('index_clean.html')
+
+@app.route('/original')
+def original_index():
+    """Serve the original monolithic page for comparison"""
     return render_template('index.html')
 
 
@@ -136,7 +141,7 @@ if __name__ == '__main__':
     socketio.run(
         app,
         host='127.0.0.1',
-        port=5000,
+        port=5001,  # Changed from 5000 to avoid conflict with Apple AirPlay
         debug=True,
         use_reloader=False,  # Disable reloader to prevent double thread creation
         allow_unsafe_werkzeug=True  # Allow for development on Mac

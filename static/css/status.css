@@ -1,0 +1,77 @@
+/* SF Transit Tracker - Status & Stats Styles */
+
+/* Stats grid */
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.stat-item {
+    background: rgba(255,255,255,0.1);
+    padding: 6px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #4facfe;
+}
+
+.stat-label {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+/* Status indicator */
+.status-indicator {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.connected { background: #4CAF50; }
+.error { background: #f44336; }
+.connecting { 
+    background: #ff9800; 
+    animation: pulse 1s infinite; 
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Debug controls */
+.debug-controls {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.debug-button {
+    background: rgba(255,165,0,0.3);
+    border: 1px solid #ffa500;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.debug-button:hover {
+    background: rgba(255,165,0,0.5);
+}

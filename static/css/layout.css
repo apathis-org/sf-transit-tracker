@@ -1,0 +1,53 @@
+/* SF Transit Tracker - Layout & Base Styles */
+
+/* Base reset and typography */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #000;
+    overflow: hidden;
+}
+
+/* Map container */
+#map { 
+    width: 100vw; 
+    height: 100vh; 
+}
+
+/* Panel base styling */
+.panel {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Panel positioning */
+.status-panel {
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+}
+
+.filter-panel {
+    top: 10px;
+    left: 200px;
+    width: 250px;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.info-panel {
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}

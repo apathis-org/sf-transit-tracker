@@ -80,9 +80,37 @@ class TransitDataFetcher:
         try:
             position = vehicle_data.position
 
-            # Determine vehicle type based on route and agency
-            route_id = vehicle_data.trip.route_id if vehicle_data.HasField('trip') else ''
+            # Try to get route from trip data first
+            route_id = ''
+            if vehicle_data.HasField('trip') and vehicle_data.trip.HasField('route_id'):
+                route_id = vehicle_data.trip.route_id
+                logger.debug(f"Vehicle {vehicle_data.vehicle.id} has route_id: {route_id}")
+            else:
+                # 511.org GTFS feed doesn't include trip data, use vehicle label as route fallback
+                if hasattr(vehicle_data.vehicle, 'label') and vehicle_data.vehicle.label:
+                    route_id = vehicle_data.vehicle.label
+                    logger.debug(f"Vehicle {vehicle_data.vehicle.id} using label as route: {route_id}")
+                else:
+                    # Last fallback: use part of vehicle ID
+                    route_id = vehicle_data.vehicle.id
+                    logger.debug(f"Vehicle {vehicle_data.vehicle.id} using ID as route: {route_id}")
+            
             vehicle_type = self._get_vehicle_type(route_id, agency)
+
+            # Extract individual vehicle timestamp if available, fallback to current time
+            if vehicle_data.HasField('timestamp'):
+                try:
+                    # Use the actual vehicle timestamp from GTFS data (Unix timestamp)
+                    vehicle_last_update = datetime.fromtimestamp(vehicle_data.timestamp).isoformat()
+                    logger.debug(f"Vehicle {vehicle_data.vehicle.id} using GTFS timestamp: {vehicle_last_update}")
+                except (ValueError, OSError) as e:
+                    # Handle invalid timestamp values
+                    logger.warning(f"Invalid timestamp {vehicle_data.timestamp} for vehicle {vehicle_data.vehicle.id}: {e}")
+                    vehicle_last_update = datetime.now().isoformat()
+            else:
+                # Fallback to current time if no timestamp in GTFS data
+                vehicle_last_update = datetime.now().isoformat()
+                logger.debug(f"Vehicle {vehicle_data.vehicle.id} using fallback timestamp: {vehicle_last_update}")
 
             return Vehicle(
                 id=f"{agency.lower()}-{vehicle_data.vehicle.id}",
@@ -93,7 +121,7 @@ class TransitDataFetcher:
                 heading=position.bearing if position.HasField('bearing') else 0.0,
                 speed=position.speed * 2.237 if position.HasField('speed') else 15.0,  # m/s to mph
                 agency=self._get_agency_name(agency),
-                last_update=datetime.now().isoformat()
+                last_update=vehicle_last_update
             )
         except Exception as e:
             logger.error(f"Error parsing GTFS vehicle: {e}")
