@@ -20,6 +20,9 @@ xmltodict==0.13.0
 # Configuration and environment
 python-dotenv==1.0.0
 
+# System monitoring
+psutil==5.9.6
+
 # Security and performance (optional but recommended)
 # Uncomment if needed for additional security
 # cryptography==41.0.7
