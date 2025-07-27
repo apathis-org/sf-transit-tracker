@@ -48,11 +48,10 @@ kill_timeout = "10s"
   cpus = 1
   memory_mb = 512
 
-# Persistent volume for GTFS data storage
-# Create with: fly volumes create sf_transit_data --region sjc --size 1
-[[mounts]]
-  source = "sf_transit_data"
-  destination = "/home/app/data"
+# Persistent volume disabled for testing - data will be ephemeral
+# [[mounts]]
+#   source = "sf_transit_data"
+#   destination = "/home/app/data"
 
 # Process configuration
 [[processes]]
