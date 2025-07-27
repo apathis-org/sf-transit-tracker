@@ -119,30 +119,53 @@ def data_monitor_page():
 # WebSocket handlers now managed by backend/api/websocket.py
 
 
-if __name__ == '__main__':
-    # Create templates directory if it doesn't exist
+# Initialize application (works with both direct run and Gunicorn)
+def init_app():
+    """Initialize the application for production deployment"""
     import os
-
+    
+    # Create required directories
     if not os.path.exists('templates'):
         os.makedirs('templates')
-
+    if not os.path.exists('data'):
+        os.makedirs('data')
+    
     # Start background data fetching service
     background_updater.start()
-
+    
     # Get initial data
     data_fetcher.fetch_all_data()
+    
+    logger.info("SF Transit Tracker initialized successfully")
+    return app
 
+# Initialize for production (Gunicorn will import this)
+if os.environ.get('FLASK_ENV') == 'production':
+    init_app()
+
+if __name__ == '__main__':
+    # Development server configuration
+    import os
+    
+    # Initialize app
+    init_app()
+    
+    # Get configuration from environment
+    port = int(os.environ.get('PORT', 5001))
+    debug = os.environ.get('DEBUG', 'True').lower() == 'true'
+    host = os.environ.get('HOST', '127.0.0.1')
+    
     logger.info("Starting SF Transit Tracker server...")
     logger.info("Make sure to set your API keys in .env file:")
     logger.info("- SF_511_API_KEY")
     logger.info("- BART_API_KEY")
-
+    
     # Run the Flask-SocketIO server
     socketio.run(
         app,
-        host='127.0.0.1',
-        port=5001,  # Changed from 5000 to avoid conflict with Apple AirPlay
-        debug=True,
+        host=host,
+        port=port,
+        debug=debug,
         use_reloader=False,  # Disable reloader to prevent double thread creation
         allow_unsafe_werkzeug=True  # Allow for development on Mac
     )

@@ -1,0 +1,114 @@
+# SF Transit Tracker - Docker ignore file
+# Optimizes Docker build by excluding unnecessary files
+
+# Python virtual environment and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Git and version control
+.git/
+.gitignore
+.gitattributes
+
+# Environment and secrets
+.env
+.env.local
+.env.production
+*.key
+*.pem
+
+# Documentation and markdown files
+docs/
+README.md
+*.md
+ROADMAP.md
+TODO.md
+deployment_plan.txt
+CLAUDE.md
+CLAUDE.local.md
+
+# Test files and directories
+tests/
+test_*.py
+*_test.py
+*.test.js
+
+# Development backup files
+templates/*_bk*.html
+templates/index_working_bkup.html
+templates/index_tron.html
+templates/index_last_wrking_July2_7pm.html
+templates/index_broken_backup.html
+
+# Development CSS files
+static/css/original-styles.css
+static/css/vehicles-default.css
+
+# TRON theme files (preserved but not needed for deployment)
+static/themes/tron/
+static/themes/README.md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+.editorconfig
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Runtime data that will be mounted as volume
+data/gtfs_*
+data/*.zip
+data/*.txt
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Large binary files
+*.zip
+*.tar.gz
+*.rar
+
+# Development scripts
+run_dev.py
+test_local.py

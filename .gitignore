@@ -120,3 +120,15 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Development backup files (keep local but don't track)
+templates/*_bk*.html
+templates/index_working_bkup.html
+templates/index_tron.html
+templates/test_bk*.html
+static/css/original-styles.css
+static/css/vehicles-default.css
+
+# Deployment artifacts
+*.tar
+*.tar.gz

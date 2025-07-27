@@ -1,0 +1,623 @@
+# SF Transit Tracker - Fly.io Deployment Plan
+
+**Project**: SF Transit Tracker (Phase 2 Complete)
+**Target Platform**: Fly.io  
+**Deployment Date**: 2025-01-21
+**Status**: Ready for Production Deployment
+
+## 🎯 Deployment Overview
+
+Deploy the recently refactored SF Transit Tracker application to Fly.io with production-grade configuration, monitoring, and scalability.
+
+## 📋 Pre-Deployment Checklist
+
+### Current Application Status
+✅ **Backend Refactored**: Modular architecture (app.py: 1500→100 lines)
+✅ **Frontend Refactored**: Complete animation system restoration  
+✅ **Data Quality**: Individual GTFS timestamps, accurate vehicle routing
+✅ **Performance**: Physics-based animations, optimized viewport handling
+✅ **Port Configuration**: Running on 5001 (avoiding macOS AirPlay conflicts)
+
+### Required for Deployment
+⏳ **Dockerfile**: Production-ready Docker configuration
+⏳ **Environment Variables**: Production secrets management
+⏳ **GitHub Repository**: Code repository for deployment source
+⏳ **Fly.io Configuration**: fly.toml with production settings
+
+---
+
+## 🐳 STEP 1: OPTIMIZE DOCKERFILE
+
+### Create Production Dockerfile
+
+**File**: `Dockerfile`
+```dockerfile
+# Multi-stage build for production optimization
+FROM python:3.12-slim as builder
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Production stage
+FROM python:3.12-slim
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Create app user (security)
+RUN useradd --create-home --shell /bin/bash app
+WORKDIR /home/app
+
+# Copy application code
+COPY --chown=app:app . .
+
+# Create data directory for GTFS storage
+RUN mkdir -p data && chown app:app data
+
+# Switch to app user
+USER app
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/api/health || exit 1
+
+# Start command
+CMD ["python", "app.py"]
+```
+
+### Create .dockerignore
+
+**File**: `.dockerignore`
+```
+# Development files
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.env
+.env.local
+
+# Documentation
+docs/
+README.md
+*.md
+ROADMAP.md
+TODO.md
+
+# Test files
+tests/
+test_*.py
+
+# Backup templates
+templates/*_bk*.html
+templates/index_working_bkup.html
+templates/index_tron.html
+
+# Development CSS
+static/css/original-styles.css
+static/css/vehicles-default.css
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+```
+
+### Production Requirements
+
+**File**: `requirements-prod.txt`
+```
+# Production-optimized dependencies
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+python-socketio==5.9.0
+requests==2.31.0
+gtfs-realtime-bindings==1.0.0
+protobuf==4.24.4
+python-dotenv==1.0.0
+xmltodict==0.13.0
+flask-cors==4.0.0
+gunicorn==21.2.0
+gevent==23.9.1
+```
+
+---
+
+## 📁 STEP 2: PUSH TO GITHUB
+
+### Repository Setup
+
+1. **Create GitHub Repository**
+   ```bash
+   # If not already created
+   gh repo create sf-transit-tracker --public --description "Real-time Bay Area transit tracking with 1700+ vehicles"
+   ```
+
+2. **Clean Up Repository**
+   ```bash
+   # Remove backup files before push
+   git rm templates/*_bk*.html templates/index_working_bkup.html --cached
+   git rm static/css/original-styles.css static/css/vehicles-default.css --cached
+   
+   # Add production files
+   git add Dockerfile .dockerignore requirements-prod.txt deployment_plan.txt
+   git commit -m "Production deployment: Add Docker configuration and deployment plan"
+   ```
+
+3. **Push to GitHub**
+   ```bash
+   git remote add origin https://github.com/[username]/sf-transit-tracker.git
+   git push -u origin main
+   ```
+
+### Repository Structure for Production
+```
+sf-transit-tracker/
+├── Dockerfile                 # Production Docker config
+├── .dockerignore             # Docker ignore rules
+├── requirements-prod.txt     # Production dependencies
+├── deployment_plan.txt       # This deployment guide
+├── fly.toml                  # Fly.io configuration (Step 5)
+├── app.py                    # Main application (~100 lines)
+├── backend/                  # Modular backend architecture
+├── static/                   # Optimized frontend assets
+├── templates/                # Clean templates (no backups)
+└── docs/                     # Project documentation
+```
+
+---
+
+## 🚀 STEP 3: INSTALL AND CONFIGURE FLY.IO
+
+### Install Fly.io CLI (if not done)
+
+**macOS**:
+```bash
+curl -L https://fly.io/install.sh | sh
+```
+
+**Verify Installation**:
+```bash
+fly version
+```
+
+### Authentication
+
+```bash
+# Login to Fly.io (if not done)
+fly auth login
+
+# Verify authentication
+fly auth whoami
+```
+
+---
+
+## 🏗️ STEP 4: CREATE FLY.IO APPLICATION
+
+### Initialize Fly.io App
+
+```bash
+# Initialize (if not already done)
+fly launch --name sf-transit-tracker --region sjc
+
+# Or if already created, just configure
+fly apps list | grep sf-transit-tracker
+```
+
+### Create fly.toml Configuration
+
+**File**: `fly.toml`
+```toml
+# Fly.io configuration for SF Transit Tracker
+app = "sf-transit-tracker"
+primary_region = "sjc"  # San Jose (close to Bay Area)
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[experimental]
+  auto_rollback = true
+
+[build]
+
+[deploy]
+  release_command = "python -c 'print(\"Starting SF Transit Tracker...\")'"
+
+[env]
+  PORT = "8080"
+  FLASK_ENV = "production"
+  PYTHONPATH = "/home/app"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/health"
+
+[vm]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[[vm.http_service.concurrency]]
+  type = "connections"
+  hard_limit = 100
+  soft_limit = 80
+
+# Volume for GTFS data persistence
+[[mounts]]
+  source = "sf_transit_data"
+  destination = "/home/app/data"
+```
+
+### Create Persistent Volume
+
+```bash
+# Create volume for GTFS data storage
+fly volumes create sf_transit_data --region sjc --size 1
+```
+
+---
+
+## 🚀 STEP 5: DEPLOY TO FLY.IO
+
+### Set Environment Variables
+
+```bash
+# Set production secrets
+fly secrets set SF_511_API_KEY="your_actual_511_api_key_here"
+fly secrets set BART_API_KEY="your_actual_bart_api_key_here"
+fly secrets set SECRET_KEY="$(openssl rand -hex 32)"
+fly secrets set DEBUG="False"
+
+# Verify secrets
+fly secrets list
+```
+
+### Update app.py for Production
+
+**Production Configuration Updates**:
+```python
+# In app.py - update port configuration
+if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 5001))
+    debug = os.environ.get('DEBUG', 'True').lower() == 'true'
+    
+    socketio.run(
+        app,
+        host='0.0.0.0',  # Bind to all interfaces for container
+        port=port,
+        debug=debug,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True
+    )
+```
+
+### Deploy Application
+
+```bash
+# Deploy to Fly.io
+fly deploy
+
+# Monitor deployment
+fly status
+fly logs
+```
+
+### Verify Deployment
+
+```bash
+# Check application status
+fly status
+
+# Get application URL
+fly info
+
+# Test endpoints
+curl https://sf-transit-tracker.fly.dev/api/health
+curl https://sf-transit-tracker.fly.dev/api/vehicles
+```
+
+---
+
+## ⚡ STEP 6: OPTIMIZE FOR PRODUCTION
+
+### Scaling Configuration
+
+```bash
+# Set scaling rules
+fly scale count 2 --region sjc  # 2 instances for redundancy
+
+# Configure autoscaling
+fly autoscale set min=1 max=3
+
+# Set machine size based on performance
+fly scale vm shared-cpu-2x --memory 1024  # If needed for high load
+```
+
+### Performance Optimizations
+
+1. **Enable Redis for Session Management** (if needed):
+   ```bash
+   fly redis create --name sf-transit-redis
+   fly secrets set REDIS_URL="$(fly redis show sf-transit-redis --json | jq -r .redis_url)"
+   ```
+
+2. **CDN Configuration**:
+   ```bash
+   # Fly.io automatically provides global CDN
+   # Static assets will be served from edge locations
+   ```
+
+3. **Caching Headers** (add to app.py):
+   ```python
+   @app.after_request
+   def add_cache_headers(response):
+       if request.endpoint == 'static':
+           response.cache_control.max_age = 31536000  # 1 year for static assets
+       return response
+   ```
+
+### Database/Storage Optimization
+
+```bash
+# Monitor volume usage
+fly volumes list
+
+# Resize volume if needed
+fly volumes extend sf_transit_data --size 2
+```
+
+---
+
+## 📊 STEP 7: MONITORING AND DEBUGGING
+
+### Application Monitoring
+
+```bash
+# Real-time logs
+fly logs
+
+# Follow logs in real-time
+fly logs --app sf-transit-tracker -f
+
+# Check machine status
+fly status --all
+
+# SSH into machine for debugging
+fly ssh console
+```
+
+### Health Check Configuration
+
+**Custom Health Check Endpoint** (add to backend/api/routes.py):
+```python
+@api_bp.route('/health')
+def health_check():
+    """Comprehensive health check for Fly.io"""
+    try:
+        # Check data fetcher status
+        vehicle_count = len(data_fetcher.vehicles) if data_fetcher else 0
+        last_update = data_fetcher.last_update if data_fetcher else None
+        
+        # Check GTFS data directory
+        import os
+        data_dir_exists = os.path.exists('data')
+        
+        health_status = {
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'vehicle_count': vehicle_count,
+            'last_update': last_update.isoformat() if last_update else None,
+            'data_directory': data_dir_exists,
+            'api_endpoints': ['vehicles', 'routes', 'health'],
+            'websocket': 'active'
+        }
+        
+        return jsonify(health_status), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+```
+
+### Performance Monitoring
+
+```bash
+# Monitor resource usage
+fly metrics
+
+# Check application performance
+fly dashboard
+
+# Set up alerts (if needed)
+fly alerts create --name "High Memory Usage" --metric memory --threshold 80
+```
+
+### Debugging Commands
+
+```bash
+# Debug deployment issues
+fly logs --app sf-transit-tracker
+
+# Check machine configuration
+fly machine list
+
+# Restart application
+fly apps restart sf-transit-tracker
+
+# Check secrets configuration
+fly secrets list
+
+# Debug networking
+fly ips list
+```
+
+---
+
+## 🔧 PRODUCTION CHECKLIST
+
+### Pre-Deployment
+- [ ] Dockerfile optimized for production
+- [ ] Environment variables configured
+- [ ] GitHub repository clean and up-to-date
+- [ ] fly.toml configuration reviewed
+- [ ] Volume created for data persistence
+
+### Post-Deployment
+- [ ] Application accessible via HTTPS
+- [ ] Health check endpoint responding
+- [ ] Vehicle data loading correctly
+- [ ] WebSocket connections working
+- [ ] Static assets loading properly
+- [ ] Performance meets expectations
+- [ ] Logs clean (no errors)
+- [ ] Monitoring configured
+
+### Security
+- [ ] API keys stored as secrets
+- [ ] HTTPS enforced
+- [ ] Debug mode disabled
+- [ ] No sensitive data in logs
+- [ ] Non-root user in container
+
+---
+
+## 🎯 Expected Results
+
+### Application URLs
+- **Main App**: https://sf-transit-tracker.fly.dev/
+- **Original Comparison**: https://sf-transit-tracker.fly.dev/original
+- **API Health**: https://sf-transit-tracker.fly.dev/api/health
+- **API Vehicles**: https://sf-transit-tracker.fly.dev/api/vehicles
+- **Test Dashboard**: https://sf-transit-tracker.fly.dev/test
+
+### Performance Targets
+- **Load Time**: < 3 seconds initial load
+- **Vehicle Animation**: 25-30 FPS consistent
+- **Memory Usage**: < 512MB steady state
+- **API Response**: < 500ms for vehicle data
+- **WebSocket**: < 100ms connection time
+
+### Monitoring Metrics
+- **Uptime**: 99.9% target
+- **Vehicle Count**: ~1700+ vehicles tracked
+- **Data Freshness**: Updates every 30 seconds
+- **Error Rate**: < 0.1% API errors
+
+---
+
+## 🚨 Troubleshooting Guide
+
+### Common Issues
+
+1. **Application Won't Start**:
+   ```bash
+   fly logs  # Check startup errors
+   fly ssh console  # Debug container directly
+   ```
+
+2. **API Keys Not Working**:
+   ```bash
+   fly secrets list  # Verify secrets exist
+   fly secrets set SF_511_API_KEY="new_key"  # Update if needed
+   ```
+
+3. **High Memory Usage**:
+   ```bash
+   fly scale vm shared-cpu-2x --memory 1024  # Increase RAM
+   ```
+
+4. **Volume Issues**:
+   ```bash
+   fly volumes list  # Check volume status
+   fly ssh console -C "ls -la /home/app/data"  # Check mount
+   ```
+
+### Emergency Commands
+
+```bash
+# Emergency rollback
+fly apps releases --app sf-transit-tracker
+fly releases rollback [version] --app sf-transit-tracker
+
+# Emergency scaling
+fly scale count 0  # Stop all instances
+fly scale count 1  # Restart with 1 instance
+
+# Emergency debugging
+fly ssh console
+curl localhost:8080/api/health
+```
+
+---
+
+## 📈 Post-Deployment Next Steps
+
+1. **Domain Configuration** (optional):
+   ```bash
+   fly certs create transit.yourdomain.com
+   ```
+
+2. **Performance Optimization**:
+   - Monitor real usage patterns
+   - Optimize based on actual traffic
+   - Consider CDN for static assets
+
+3. **Feature Enhancements**:
+   - Complete Phase 3 testing
+   - Implement TRON theme toggle
+   - Add user analytics
+
+4. **Scaling Strategy**:
+   - Monitor vehicle load patterns
+   - Implement auto-scaling based on usage
+   - Consider regional deployments
+
+---
+
+**Deployment Owner**: Claude Code Assistant  
+**Last Updated**: 2025-01-21  
+**Status**: Ready for Production Deployment  
+**Estimated Deployment Time**: 1-2 hours

@@ -1,0 +1,29 @@
+# SF Transit Tracker - Production Dependencies
+# Optimized for Fly.io deployment with performance and security
+
+# Core Flask dependencies
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+python-socketio==5.9.0
+flask-cors==4.0.0
+
+# Production WSGI server
+gunicorn==21.2.0
+gevent==23.9.1
+
+# API and data processing
+requests==2.31.0
+gtfs-realtime-bindings==1.0.0
+protobuf==4.24.4
+xmltodict==0.13.0
+
+# Configuration and environment
+python-dotenv==1.0.0
+
+# Security and performance (optional but recommended)
+# Uncomment if needed for additional security
+# cryptography==41.0.7
+# certifi==2023.11.17
+
+# Note: Removed eventlet due to Python 3.12 compatibility
+# Using gevent for async support with Gunicorn

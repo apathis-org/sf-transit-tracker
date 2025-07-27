@@ -1,0 +1,74 @@
+# Fly.io configuration for SF Transit Tracker
+# Optimized for Bay Area deployment with real-time transit tracking
+
+app = "sf-transit-tracker"
+primary_region = "sjc"  # San Jose - closest to Bay Area
+kill_signal = "SIGINT"
+kill_timeout = "10s"
+
+[experimental]
+  auto_rollback = true
+
+[build]
+
+[deploy]
+  release_command = "python -c \"import os; print('SF Transit Tracker deploying to production...'); os.makedirs('data', exist_ok=True)\""
+
+[env]
+  PORT = "8080"
+  FLASK_ENV = "production"
+  HOST = "0.0.0.0"
+  PYTHONPATH = "/home/app"
+  PYTHONUNBUFFERED = "1"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    timeout = "10s"
+    path = "/api/health"
+    protocol = "http"
+    tls_skip_verify = false
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+[vm]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+# Persistent volume for GTFS data storage
+# Create with: fly volumes create sf_transit_data --region sjc --size 1
+[[mounts]]
+  source = "sf_transit_data"
+  destination = "/home/app/data"
+
+# Process configuration
+[[processes]]
+  name = "app"
+  entrypoint = ["gunicorn"]
+  cmd = [
+    "--bind", "0.0.0.0:8080",
+    "--workers", "2",
+    "--worker-class", "gevent",
+    "--worker-connections", "1000",
+    "--timeout", "30",
+    "--keep-alive", "2",
+    "--max-requests", "1000",
+    "--max-requests-jitter", "100",
+    "--log-level", "info",
+    "--access-logfile", "-",
+    "--error-logfile", "-",
+    "app:app"
+  ]

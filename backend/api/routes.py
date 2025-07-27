@@ -38,13 +38,83 @@ def get_vehicles():
 
 @api_bp.route('/health')
 def health():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'vehicles': len(data_fetcher.vehicles),
-        'lastUpdate': data_fetcher.last_update.isoformat() if data_fetcher.last_update else None,
-        'timestamp': datetime.now().isoformat()
-    })
+    """Comprehensive health check endpoint for production monitoring"""
+    try:
+        import os
+        import psutil
+        
+        # Basic application health
+        vehicle_count = len(data_fetcher.vehicles) if data_fetcher else 0
+        last_update = data_fetcher.last_update if data_fetcher else None
+        
+        # Check data directory
+        data_dir_exists = os.path.exists('data')
+        data_dir_writable = os.access('data', os.W_OK) if data_dir_exists else False
+        
+        # System metrics (if psutil available, otherwise basic info)
+        try:
+            memory_usage = psutil.virtual_memory().percent
+            cpu_usage = psutil.cpu_percent()
+        except ImportError:
+            memory_usage = None
+            cpu_usage = None
+        
+        # Check if we have recent vehicle data (should update every 30 seconds)
+        import time
+        data_freshness = 'stale'
+        if last_update:
+            seconds_since_update = (datetime.now() - last_update).total_seconds()
+            if seconds_since_update < 60:  # Less than 1 minute is fresh
+                data_freshness = 'fresh'
+            elif seconds_since_update < 300:  # Less than 5 minutes is acceptable
+                data_freshness = 'acceptable'
+        
+        # Determine overall health status
+        status = 'healthy'
+        if vehicle_count == 0:
+            status = 'warning'
+        if not data_dir_exists or data_freshness == 'stale':
+            status = 'degraded'
+        
+        health_data = {
+            'status': status,
+            'timestamp': datetime.now().isoformat(),
+            'application': {
+                'vehicle_count': vehicle_count,
+                'last_update': last_update.isoformat() if last_update else None,
+                'data_freshness': data_freshness,
+                'data_directory': {
+                    'exists': data_dir_exists,
+                    'writable': data_dir_writable
+                }
+            },
+            'system': {
+                'memory_usage_percent': memory_usage,
+                'cpu_usage_percent': cpu_usage,
+                'python_version': f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}"
+            },
+            'endpoints': ['/', '/original', '/api/vehicles', '/api/routes', '/api/health', '/test'],
+            'services': {
+                'websocket': 'active',
+                'background_updater': 'running' if data_fetcher else 'stopped',
+                'gtfs_processor': 'available'
+            }
+        }
+        
+        # Return appropriate HTTP status
+        if status == 'healthy':
+            return jsonify(health_data), 200
+        elif status == 'warning':
+            return jsonify(health_data), 200  # Still OK, just warning
+        else:
+            return jsonify(health_data), 503  # Service degraded
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 
 @api_bp.route('/routes')
