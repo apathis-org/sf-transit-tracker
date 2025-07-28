@@ -484,27 +484,46 @@ class TransitTracker {
             agencies.add(v.agency);
         });
 
-        document.getElementById('total-vehicles').textContent = totalVehicles;
-        document.getElementById('total-agencies').textContent = agencies.size;
-        document.getElementById('route-aware-count').textContent = '0';
+        // Update unified status panel
+        document.getElementById('vehicle-count').textContent = `${totalVehicles} vehicles`;
+        document.getElementById('agency-count').textContent = `${agencies.size} agencies`;
+        
+        // Update routes count (get from route manager if available)
+        const routesLoaded = this.routeManager ? Object.keys(this.routeManager.routes || {}).length : 0;
+        
+        // Count route-aware vehicles (vehicles that have route shape data)
+        let routeAwareCount = 0;
+        this.vehicles.forEach(vehicle => {
+            if (vehicle.route && this.routeManager && this.routeManager.routes[vehicle.route]) {
+                routeAwareCount++;
+            }
+        });
+        
+        document.getElementById('routes-count').textContent = `${routesLoaded} routes (${routeAwareCount} route aware)`;
+        
+        // Update timestamp
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        document.getElementById('last-update').textContent = `Last update: ${timeString}`;
     }
 
     updateStatus(status) {
         const statusEl = document.getElementById('status');
         const dot = statusEl.querySelector('.status-dot');
+        const connectionText = document.getElementById('connection-text');
 
         switch(status) {
             case 'connected':
                 dot.className = 'status-dot connected';
-                statusEl.innerHTML = '<div class="status-dot connected"></div>Connected';
+                connectionText.textContent = 'Connected';
                 break;
             case 'connecting':
                 dot.className = 'status-dot connecting';
-                statusEl.innerHTML = '<div class="status-dot connecting"></div>Connecting...';
+                connectionText.textContent = 'Connecting...';
                 break;
             case 'error':
-                dot.className = 'status-dot error';
-                statusEl.innerHTML = '<div class="status-dot error"></div>Disconnected';
+                dot.className = 'status-dot disconnected';
+                connectionText.textContent = 'Disconnected';
                 break;
         }
     }

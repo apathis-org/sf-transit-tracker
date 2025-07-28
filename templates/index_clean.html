@@ -15,16 +15,16 @@
 <body>
     <div id="map"></div>
 
-    <div class="panel status-panel">
+    <div class="panel unified-status-panel" id="unified-status">
         <div class="status-indicator" id="status">
             <div class="status-dot connecting"></div>
-            Connecting...
+            <span id="connection-text">Connecting...</span>
         </div>
-        <div style="font-size: 10px; margin-top: 4px; opacity: 0.8;" id="update-time">
-            Last update: --:--
-        </div>
-        <div style="font-size: 10px; margin-top: 4px; opacity: 0.8;" id="route-status">
-            Routes: Loading...
+        <div class="status-details" id="status-details">
+            <span id="vehicle-count">0 vehicles</span> • 
+            <span id="agency-count">0 agencies</span> • 
+            <span id="routes-count">0 routes (0 route aware)</span> • 
+            <span id="last-update">Last update: --:--</span>
         </div>
     </div>
 
@@ -93,27 +93,6 @@
         </div>
     </div>
 
-    <div class="panel info-panel">
-        <h3>🚌 Transit Tracker</h3>
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-value" id="total-vehicles">0</div>
-                <div class="stat-label">Vehicles</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="total-agencies">0</div>
-                <div class="stat-label">Agencies</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="route-aware-count">0</div>
-                <div class="stat-label">Route-Aware</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="routes-loaded">0</div>
-                <div class="stat-label">Routes Loaded</div>
-            </div>
-        </div>
-    </div>
 
     <!-- External Libraries -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
