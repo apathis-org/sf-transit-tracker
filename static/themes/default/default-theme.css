@@ -84,16 +84,92 @@ body {
     color: #f44336;
 }
 
+/* Filter Toggle Button */
+.filter-toggle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1001;
+    background: rgba(0,0,0,0.9);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    display: none; /* Hidden on desktop */
+    flex-direction: column;
+    gap: 3px;
+    backdrop-filter: blur(10px);
+}
+
+.filter-toggle .hamburger {
+    width: 20px;
+    height: 2px;
+    background: #4facfe;
+    transition: all 0.3s ease;
+}
+
+.filter-toggle.active .hamburger:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.filter-toggle.active .hamburger:nth-child(2) {
+    opacity: 0;
+}
+
+.filter-toggle.active .hamburger:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.filter-close {
+    background: none;
+    border: none;
+    color: #4facfe;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: none; /* Hidden on desktop */
+    align-items: center;
+    justify-content: center;
+}
+
+.filter-close:hover {
+    color: white;
+}
+
 /* Mobile responsive design */
 @media (max-width: 768px) {
+    .filter-toggle {
+        display: flex;
+    }
+    
+    .filter-close {
+        display: flex;
+    }
+    
     .filter-panel {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        width: auto;
+        top: -100%;
+        left: 0;
+        right: 0;
+        width: 100vw;
         max-width: none;
-        max-height: 40vh;
+        max-height: 70vh;
         font-size: 11px;
+        border-radius: 0 0 16px 16px;
+        transition: top 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .filter-panel.show {
+        top: 0;
     }
     
     .status-panel {
