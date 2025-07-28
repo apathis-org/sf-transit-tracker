@@ -84,6 +84,44 @@ body {
     color: #f44336;
 }
 
+/* Mobile responsive design */
+@media (max-width: 768px) {
+    .filter-panel {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+        max-height: 40vh;
+        font-size: 11px;
+    }
+    
+    .status-panel {
+        bottom: 10px;
+        top: auto;
+        left: 10px;
+        font-size: 11px;
+        padding: 10px;
+    }
+    
+    .info-panel {
+        bottom: 10px;
+        top: auto;
+        right: 10px;
+        font-size: 11px;
+        padding: 10px;
+    }
+    
+    .filter-group h4 {
+        font-size: 12px;
+    }
+    
+    .filter-item {
+        font-size: 11px;
+        padding: 2px 0;
+    }
+}
+
 /* Vehicle icons */
 .transit-icon {
     border-radius: 50%;
