@@ -38,8 +38,19 @@ class TransitTracker {
     async init() {
         // Initialize map
         this.map = L.map('map').setView([37.7749, -122.4194], 12);
-        // Load and display OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+        // Load dark mode map tiles with visible street names and grid
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(this.map);
+        
+        // Add bright labels overlay for readable street names
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 20,
+            pane: 'overlayPane'
+        }).addTo(this.map);
 
         // Initialize components
         await this.initializeRouteManager();
