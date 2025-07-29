@@ -52,8 +52,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'sf-transit-secret-key')
 app.config['DEBUG'] = os.getenv('DEBUG', 'True').lower() == 'true'
 
-# Enable CORS and SocketIO
+# Enable CORS and Socket.IO (uses HTTP polling for real-time communication, not WebSockets)
 CORS(app)
+# Note: Socket.IO provides connection tracking and real-time updates via HTTP polling
+# This enables us to start/stop API calls based on active client connections
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # API Configuration
@@ -74,10 +76,11 @@ data_fetcher = TransitDataFetcher(API_KEYS)
 gtfs_processor = GTFSProcessor()
 background_updater = BackgroundUpdater(data_fetcher, socketio)
 
-# Initialize API routes and WebSocket handlers with global instances
+# Initialize API routes and Socket.IO handlers with global instances
 init_api_routes(data_fetcher, gtfs_processor)
 init_test_routes(data_fetcher, API_KEYS)
-init_websocket_handlers(data_fetcher, socketio)
+# Socket.IO handlers manage connection-based API calls (via HTTP polling, not WebSockets)
+init_websocket_handlers(data_fetcher, socketio, background_updater)
 
 # Register API blueprints
 app.register_blueprint(api_bp)
@@ -130,11 +133,10 @@ def init_app():
     if not os.path.exists('data'):
         os.makedirs('data')
     
-    # Start background data fetching service
-    background_updater.start()
+    # Background data fetching will start automatically when first client connects
+    # No longer auto-starting to prevent API calls when no users online
     
-    # Get initial data
-    data_fetcher.fetch_all_data()
+    logger.info("Background updater configured - will start when first client connects")
     
     logger.info("SF Transit Tracker initialized successfully")
     return app
@@ -151,16 +153,17 @@ if __name__ == '__main__':
     init_app()
     
     # Get configuration from environment
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 5002))
     debug = os.environ.get('DEBUG', 'True').lower() == 'true'
     host = os.environ.get('HOST', '127.0.0.1')
     
     logger.info("Starting SF Transit Tracker server...")
+    logger.info(f"Server will run on http://{host}:{port}")
     logger.info("Make sure to set your API keys in .env file:")
     logger.info("- SF_511_API_KEY")
     logger.info("- BART_API_KEY")
     
-    # Run the Flask-SocketIO server
+    # Run the Flask-SocketIO server (handles HTTP polling connections for real-time updates)
     socketio.run(
         app,
         host=host,

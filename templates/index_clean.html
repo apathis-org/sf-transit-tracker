@@ -7,6 +7,7 @@
     
     <!-- External Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <!-- Socket.IO client library (provides HTTP polling for real-time updates) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     
     <!-- Default theme with exact original styles -->
@@ -37,7 +38,7 @@
 
     <div class="panel filter-panel" id="filter-panel">
         <div class="filter-header">
-            <h3 style="color: #4facfe; margin-bottom: 10px;">🎛️ Filters</h3>
+            <h3 style="color: rgba(255,255,255,0.9); margin-bottom: 10px; font-weight: 600;">🎛️ Filters</h3>
             <button class="filter-close" id="filter-close" aria-label="Close Filters">✕</button>
         </div>
 
@@ -101,51 +102,7 @@
     <script src="/static/routeManager.js"></script>
     <script src="/static/js/TransitTracker.js"></script>
     
-    <!-- Mobile Filter Toggle -->
-    <script>
-        // Mobile filter toggle functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            const filterToggle = document.getElementById('filter-toggle');
-            const filterPanel = document.getElementById('filter-panel');
-            const filterClose = document.getElementById('filter-close');
-            
-            function toggleFilters() {
-                filterPanel.classList.toggle('show');
-                filterToggle.classList.toggle('active');
-            }
-            
-            function closeFilters() {
-                filterPanel.classList.remove('show');
-                filterToggle.classList.remove('active');
-            }
-            
-            // Event listeners
-            if (filterToggle) {
-                filterToggle.addEventListener('click', toggleFilters);
-            }
-            
-            if (filterClose) {
-                filterClose.addEventListener('click', closeFilters);
-            }
-            
-            // Close filters when clicking outside on mobile
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth <= 768 && 
-                    filterPanel.classList.contains('show') &&
-                    !filterPanel.contains(e.target) && 
-                    !filterToggle.contains(e.target)) {
-                    closeFilters();
-                }
-            });
-            
-            // Close filters on escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && filterPanel.classList.contains('show')) {
-                    closeFilters();
-                }
-            });
-        });
-    </script>
+    <!-- Filter toggle functionality now handled by TransitTracker.js -->
 
     <!-- Application Initialization -->
     <script>

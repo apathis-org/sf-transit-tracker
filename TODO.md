@@ -1,73 +1,105 @@
 # SF Transit Tracker - Current TODO
 
-## 🔥 Active Sprint
+## 🚨 CRITICAL: API Rate Limiting Fixes (Active Sprint)
 
-### Phase 1: Backend Refactoring (In Progress)
-- [ ] **Create backend directory structure**
-  - [ ] `mkdir -p backend/{models,services,api,utils}`
-  - [ ] Create `__init__.py` files for Python packages
+### Context
+Production app is hitting 511.org API rate limits (60 requests/hour). Currently making 480 requests/hour!
+- 4 agency APIs (SF, GG, AC, RG) × every 30 seconds = 8 requests/minute
+- Multiple instances running (local dev + production)
+- Health checks adding extra API calls
 
-- [ ] **Extract models** → `backend/models/`
-  - [ ] Move `Vehicle` dataclass → `backend/models/vehicle.py`
-  - [ ] Extract GTFS-related classes → `backend/models/gtfs.py`
-  - [ ] Update imports throughout codebase
+### Fix Strategy
 
-- [ ] **Extract services** → `backend/services/`
-  - [ ] Move `TransitDataFetcher` → `backend/services/transit_fetcher.py`
-  - [ ] Move `GTFSProcessor` → `backend/services/gtfs_processor.py`
-  - [ ] Extract background update logic → `backend/services/background_updater.py`
+#### FIX #1 (CRITICAL): Increase Update Interval ⏱️
+- [ ] File: `backend/services/background_updater.py`
+- [ ] Change: `update_interval: int = 30` → `update_interval: int = 300` (5 minutes)
+- [ ] Math: 4 APIs × 12 cycles/hour = 48 requests/hour ✅ (under 60 limit)
+- [ ] Impact: Transit data updates every 5 minutes instead of 30 seconds
 
-- [ ] **Split API routes** → `backend/api/`
-  - [ ] Main API routes → `backend/api/routes.py`
-  - [ ] Test endpoints → `backend/api/test_routes.py`
-  - [ ] WebSocket handlers → `backend/api/websocket.py`
+#### FIX #3 (CRITICAL): API-Independent Health Checks 🏥
+- [ ] Create `/api/ping` endpoint that just returns 200 OK (no API calls)
+- [ ] Update Dockerfile: Change health check to use `/api/ping`
+- [ ] Update fly.toml: Change health check path to `/api/ping`
+- [ ] Keep `/api/health` for monitoring but make it rate-limit aware
 
-- [ ] **Clean up app.py**
-  - [ ] Keep only Flask app initialization and route imports
-  - [ ] Remove all business logic
-  - [ ] Target: <100 lines
+#### FIX #2 (IMPORTANT): Rate Limit Detection and Backoff 🛑
+- [ ] File: `backend/services/transit_fetcher.py`
+- [ ] Detect 429 response codes
+- [ ] Implement exponential backoff
+- [ ] Add circuit breaker logic
+- [ ] Show "Rate Limited" status instead of "Connecting"
 
-- [ ] **Test functionality preservation**
-  - [ ] All API endpoints respond correctly
-  - [ ] WebSocket connections work
-  - [ ] Vehicle data updates properly
-  - [ ] No performance regressions
+#### FIX #4 (DEVELOPMENT): Mock API Mode 🧪
+- [ ] Add `MOCK_APIS=true` environment variable
+- [ ] Return fake vehicle data when enabled
+- [ ] Create `run_local.sh` script that sets this automatically
+- [ ] Allow unlimited local testing without API quota
 
-## ⏳ Next Phase
+#### FIX #5 (OPTIMIZATIONS): Additional Improvements 🚀
+- [ ] **5A**: Agency rotation - call 1 agency per cycle instead of all 4
+- [ ] **5B**: Smart caching - cache API responses for 2-3 minutes
+- [ ] **5C**: Monitoring - add API quota tracking in logs
 
-### Phase 2: Frontend Refactoring (Queued)
-- [ ] Create `frontend/` directory structure
-- [ ] Extract CSS from index.html into modular files
-- [ ] Split JavaScript into focused classes
-- [ ] Create clean index.html template
-- [ ] Test UI functionality preservation
+## ✅ Completed Tasks
 
-### Phase 3: Testing Implementation (Queued)
-- [ ] Set up Playwright testing environment
-- [ ] Create frontend testing dashboard
-- [ ] Implement automated vehicle movement tests
-- [ ] Add performance monitoring
+### Phase 1: Backend Refactoring ✓
+- [x] Created backend directory structure
+- [x] Extracted models to `backend/models/`
+- [x] Extracted services to `backend/services/`
+- [x] Split API routes to `backend/api/`
+- [x] Cleaned up app.py (<200 lines)
+- [x] Tested functionality preservation
 
-## 📋 Definition of Done (Phase 1)
-- [ ] ✅ Code split into logical modules with single responsibilities
-- [ ] ✅ All original functionality preserved (no breaking changes)
-- [ ] ✅ Tests pass (existing + new verification tests)
-- [ ] ✅ Performance maintained (no slowdowns)
-- [ ] ✅ Documentation updated
-- [ ] ✅ Team can easily understand new structure
+### Phase 2: Frontend Refactoring ✓
+- [x] Extracted CSS into modular files
+- [x] Created theme system (TRON/Default)
+- [x] Split JavaScript into TransitTracker class
+- [x] Created clean index_clean.html template
+- [x] Preserved all animations and functionality
 
-## 🚨 Critical Requirements
-- **Zero Breaking Changes**: All existing functionality must work
-- **Performance Maintained**: No degradation in speed or responsiveness  
-- **WebSocket Preserved**: Real-time updates continue working
-- **API Compatibility**: All endpoints respond identically
+### Deployment ✓
+- [x] Created production-ready Dockerfile with multi-stage build
+- [x] Cleaned up repository and pushed to GitHub (private repo)
+- [x] Configured Fly.io application and fly.toml
+- [x] Set production environment variables and secrets
+- [x] Deployed to Fly.io (https://sf-transit-tracker.fly.dev)
+
+### Mobile UX Improvements ✓
+- [x] Added mobile responsive design
+- [x] Implemented collapsible filter panel with hamburger menu
+- [x] Created unified status panel (replaced dual panels)
+- [x] Added route-aware count to status display
+
+## 📋 Pending Tasks
+
+### Phase 3: Testing Implementation
+- [ ] Create /test/frontend endpoint with monitoring dashboard
+- [ ] Add real-time performance metrics display (FPS, memory, vehicle count)
+- [ ] Implement vehicle movement verification tools
+- [ ] Run comprehensive manual testing checklist
+
+### Bug Fixes & Investigation
+- [ ] Investigate README file duplication issue (user reports seeing README.md and READ_ME.md)
+
+### Deployment Monitoring
+- [ ] Configure production monitoring and alerts
+- [ ] Set up scaling policies
+- [ ] Implement proper health check endpoints
+
+## 🎯 Priority Order
+1. **FIX #1**: Increase update interval (immediate relief)
+2. **FIX #3**: Fix health checks (stop extra API calls)
+3. **FIX #2**: Add rate limit handling (graceful degradation)
+4. **FIX #4**: Add mock mode (better developer experience)
+5. **FIX #5**: Optimizations (long-term sustainability)
 
 ## 📝 Notes
-- Start with models extraction (lowest risk)
-- Test each extraction step before proceeding
-- Keep git commits small and focused
-- Backup working version before major changes
+- API rate limit is the #1 blocker - fix this first!
+- Health checks are burning quota unnecessarily
+- Consider reaching out to 511.org for higher rate limits
+- Mock mode will prevent future developer quota issues
 
 ---
 
-*Focus: One phase at a time, test continuously, preserve all functionality*
+*Last Updated: July 28 2025*
+*Focus: Fix API rate limiting to restore functionality*

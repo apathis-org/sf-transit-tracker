@@ -28,6 +28,16 @@ def init_api_routes(df, gp):
 @api_bp.route('/vehicles')
 def get_vehicles():
     """REST endpoint for vehicle data"""
+    # If no vehicles cached and no recent update, fetch fresh data
+    if (not data_fetcher.vehicles and 
+        (not data_fetcher.last_update or 
+         (datetime.now() - data_fetcher.last_update).total_seconds() > 300)):
+        logger.info("No cached vehicles, fetching fresh data for HTTP client")
+        try:
+            data_fetcher.fetch_all_data()
+        except Exception as e:
+            logger.error(f"Failed to fetch data for HTTP client: {e}")
+    
     vehicles_dict = {vid: vehicle.to_dict() for vid, vehicle in data_fetcher.vehicles.items()}
     return jsonify({
         'vehicles': list(vehicles_dict.values()),

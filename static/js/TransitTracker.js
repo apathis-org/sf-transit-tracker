@@ -1,6 +1,10 @@
 /**
  * SF Transit Tracker - Main application class
  * Coordinates map, vehicles, filters, and real-time updates
+ * 
+ * Note: Uses Socket.IO for real-time communication, which automatically
+ * falls back to HTTP polling when WebSocket libraries are unavailable.
+ * This provides reliable connection tracking for our API optimization.
  */
 
 class TransitTracker {
@@ -40,6 +44,7 @@ class TransitTracker {
         // Initialize components
         await this.initializeRouteManager();
         this.setupFilters();
+        this.setupFilterToggle();
         this.connectSocket();
         this.startAnimationLoop();
     }
@@ -48,10 +53,20 @@ class TransitTracker {
         // Initialize route-aware animation
         this.routeManager = new RouteManager();
         const success = await this.routeManager.initialize();
-        document.getElementById('route-status').textContent =
-            success ? `Routes: ${this.routeManager.routes.size} loaded ✨` : 'Routes: Failed to load';
+        
+        // Update route status if element exists (for backward compatibility)
+        const routeStatusEl = document.getElementById('route-status');
+        if (routeStatusEl) {
+            routeStatusEl.textContent = 
+                success ? `Routes: ${this.routeManager.routes.size} loaded ✨` : 'Routes: Failed to load';
+        }
 
-        document.getElementById('routes-loaded').textContent = this.routeManager.routes.size;
+        const routesLoadedEl = document.getElementById('routes-loaded');
+        if (routesLoadedEl) {
+            routesLoadedEl.textContent = this.routeManager.routes.size;
+        }
+        
+        console.log(`RouteManager initialized: ${success ? 'Success' : 'Failed'}, ${this.routeManager.routes.size} routes loaded`);
     }
 
     setupFilters() {
@@ -65,9 +80,57 @@ class TransitTracker {
         });
     }
 
+    setupFilterToggle() {
+        const toggleBtn = document.getElementById('filter-toggle');
+        const closeBtn = document.getElementById('filter-close');
+        const filterPanel = document.getElementById('filter-panel');
+
+        if (toggleBtn && filterPanel) {
+            toggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isCurrentlyShown = filterPanel.classList.contains('show');
+                
+                if (isCurrentlyShown) {
+                    toggleBtn.classList.remove('active');
+                    filterPanel.classList.remove('show');
+                } else {
+                    toggleBtn.classList.add('active');
+                    filterPanel.classList.add('show');
+                }
+            });
+        } else {
+            console.error('Toggle button or filter panel not found!');
+        }
+
+        if (closeBtn && filterPanel) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleBtn.classList.remove('active');
+                filterPanel.classList.remove('show');
+            });
+        }
+
+        // Close panel when clicking outside (with delay to prevent immediate closing)
+        setTimeout(() => {
+            document.addEventListener('click', (e) => {
+                if (filterPanel && toggleBtn && !filterPanel.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    if (filterPanel.classList.contains('show')) {
+                        toggleBtn.classList.remove('active');
+                        filterPanel.classList.remove('show');
+                    }
+                }
+            });
+        }, 100);
+    }
+
     connectSocket() {
         this.updateStatus('connecting');
 
+        // Initialize Socket.IO client (will use HTTP polling, not WebSockets)
+        // This provides reliable real-time communication and connection tracking
         this.socket = io();
 
         this.socket.on('connect', () => {
@@ -79,28 +142,53 @@ class TransitTracker {
         });
 
         this.socket.on('disconnect', () => {
+            console.log('Socket.IO disconnected');
             this.updateStatus('error');
         });
 
-        // Fallback to HTTP if socket fails
+        this.socket.on('connect_error', (error) => {
+            console.error('Socket.IO connection error:', error);
+            this.updateStatus('error');
+        });
+
+        // Fallback to pure HTTP polling if Socket.IO fails completely
         setTimeout(() => {
             if (!this.socket || !this.socket.connected) {
+                console.log('Socket.IO failed, falling back to manual HTTP polling');
                 this.fallbackToHTTP();
             }
         }, 5000);
     }
 
     async fallbackToHTTP() {
+        console.log('Starting manual HTTP polling fallback (Socket.IO unavailable)');
         this.updateStatus('connected');
-        setInterval(async () => {
-            try {
-                const response = await fetch('/api/vehicles');
-                const data = await response.json();
-                this.handleVehicleUpdate({ vehicles: data.vehicles });
-            } catch (error) {
-                console.error('HTTP fetch failed:', error);
-            }
+        
+        // Immediately fetch data
+        this.fetchVehicleData();
+        
+        // Set up manual polling (less efficient than Socket.IO polling)
+        setInterval(() => {
+            this.fetchVehicleData();
         }, 30000);
+    }
+
+    async fetchVehicleData() {
+        try {
+            console.log('Fetching vehicle data via HTTP...');
+            const response = await fetch('/api/vehicles');
+            const data = await response.json();
+            
+            if (data.vehicles && data.vehicles.length > 0) {
+                console.log(`Received ${data.vehicles.length} vehicles`);
+                this.handleVehicleUpdate({ vehicles: data.vehicles });
+            } else {
+                console.log('No vehicles in response');
+            }
+        } catch (error) {
+            console.error('HTTP fetch failed:', error);
+            this.updateStatus('error');
+        }
     }
 
     handleVehicleUpdate(data) {
@@ -153,9 +241,12 @@ class TransitTracker {
         this.updateStats();
         this.updateVisibleVehicles(); // Make sure vehicles are shown based on filter state
         
-        // Update last update time
-        document.getElementById('update-time').textContent =
-            `Last update: ${new Date().toLocaleTimeString()}`;
+        // Update last update time (use defensive check for element existence)
+        const updateTimeEl = document.getElementById('update-time') || document.getElementById('last-update');
+        if (updateTimeEl) {
+            updateTimeEl.textContent = 
+                `Last update: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+        }
     }
 
     getVehicleType(vehicleData) {
@@ -484,9 +575,16 @@ class TransitTracker {
             agencies.add(v.agency);
         });
 
-        // Update unified status panel
-        document.getElementById('vehicle-count').textContent = `${totalVehicles} vehicles`;
-        document.getElementById('agency-count').textContent = `${agencies.size} agencies`;
+        // Update unified status panel (defensive checks)
+        const vehicleCountEl = document.getElementById('vehicle-count');
+        if (vehicleCountEl) {
+            vehicleCountEl.textContent = `${totalVehicles} vehicles`;
+        }
+        
+        const agencyCountEl = document.getElementById('agency-count');
+        if (agencyCountEl) {
+            agencyCountEl.textContent = `${agencies.size} agencies`;
+        }
         
         // Update routes count (get from route manager if available)
         const routesLoaded = this.routeManager ? Object.keys(this.routeManager.routes || {}).length : 0;
@@ -499,12 +597,18 @@ class TransitTracker {
             }
         });
         
-        document.getElementById('routes-count').textContent = `${routesLoaded} routes (${routeAwareCount} route aware)`;
+        const routesCountEl = document.getElementById('routes-count');
+        if (routesCountEl) {
+            routesCountEl.textContent = `${routesLoaded} routes (${routeAwareCount} route aware)`;
+        }
         
-        // Update timestamp
+        // Update timestamp (defensive check for element existence)
         const now = new Date();
-        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        document.getElementById('last-update').textContent = `Last update: ${timeString}`;
+        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        const lastUpdateEl = document.getElementById('last-update') || document.getElementById('update-time');
+        if (lastUpdateEl) {
+            lastUpdateEl.textContent = `Last update: ${timeString}`;
+        }
     }
 
     updateStatus(status) {
