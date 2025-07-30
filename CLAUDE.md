@@ -116,7 +116,32 @@ The project includes comprehensive testing tools:
 ## Development Notes
 
 - Frontend uses vanilla JavaScript (no build system required)
-- Real-time updates via WebSocket with automatic HTTP fallback
+- Real-time updates via Socket.IO HTTP polling (NOT WebSockets)
 - Vehicle animations use physics-based interpolation for smooth movement
 - All API calls include proper error handling and retry logic
 - Theme switching preserves all vehicle states and positions
+
+## CRITICAL: Docker Production Testing
+
+**ALWAYS test Docker with the EXACT production command:**
+
+```bash
+docker run -d -p 5002:8080 --name sf-transit-test --env-file .env sf-transit-tracker \
+  gunicorn --bind 0.0.0.0:8080 --workers 2 \
+  --worker-class gevent --worker-connections 1000 \
+  --timeout 30 --keep-alive 2 --max-requests 1000 \
+  --max-requests-jitter 100 --log-level info \
+  --access-logfile - --error-logfile - app:app
+```
+
+**Never use simplified Docker run** - it hides critical issues like:
+- Socket.IO async mode mismatches (gevent vs threading)
+- Multi-worker session management problems
+- Worker recycling breaking connections
+- HTTP 400 errors from configuration conflicts
+
+**Production Testing Must-Dos:**
+- Check Socket.IO shows "Connected" (not "Disconnected")
+- Monitor logs for HTTP 400 errors
+- Test with multiple concurrent connections
+- Verify sessions survive worker recycling

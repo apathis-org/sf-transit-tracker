@@ -63,6 +63,44 @@ python app.py
 
 6. Open your browser to http://localhost:5001
 
+## 🐳 Docker Production Testing
+
+### CRITICAL: Always Test with Exact Production Configuration
+
+When testing Docker locally, you MUST use the exact production command to catch configuration issues:
+
+```bash
+# Build the Docker image
+docker build -t sf-transit-tracker .
+
+# Run with EXACT production configuration
+docker run -d -p 5002:8080 --name sf-transit-test --env-file .env sf-transit-tracker \
+  gunicorn --bind 0.0.0.0:8080 --workers 2 \
+  --worker-class gevent --worker-connections 1000 \
+  --timeout 30 --keep-alive 2 --max-requests 1000 \
+  --max-requests-jitter 100 --log-level info \
+  --access-logfile - --error-logfile - app:app
+
+# Check logs for any issues
+docker logs -f sf-transit-test
+
+# Test the application
+curl http://localhost:5002/api/health
+```
+
+**Why This Matters:**
+- Default Docker run uses single process (hides multi-worker issues)
+- Production uses gevent workers (async mode must match)
+- Multiple workers expose session management problems
+- Catches Socket.IO configuration mismatches early
+
+### Production Testing Checklist
+- [ ] Monitor connection status (should show "Connected")
+- [ ] Check logs for HTTP 400 errors
+- [ ] Test with multiple browser tabs
+- [ ] Verify connections survive for 5+ minutes
+- [ ] Ensure worker recycling doesn't break sessions
+
 ## 🔧 Configuration
 
 Create a `.env` file with the following variables:

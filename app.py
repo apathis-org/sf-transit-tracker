@@ -54,9 +54,11 @@ app.config['DEBUG'] = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # Enable CORS and Socket.IO (uses HTTP polling for real-time communication, not WebSockets)
 CORS(app)
+
 # Note: Socket.IO provides connection tracking and real-time updates via HTTP polling
 # This enables us to start/stop API calls based on active client connections
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Auto-detect async mode for optimal compatibility across environments
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # API Configuration
 API_KEYS = {
