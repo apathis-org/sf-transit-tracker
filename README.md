@@ -20,6 +20,7 @@ A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across
 - **Smooth Animations**: Physics-based vehicle movement with 30 FPS throttling
 - **WebSocket Updates**: Real-time data streaming with automatic HTTP fallback
 - **Interactive Filters**: Show/hide specific transit types
+- **Location-based Auto-zoom**: Automatically centers map on user's location
 - **Route Visualization**: Display GTFS route shapes on the map
 
 ## 🚀 Quick Start
@@ -244,6 +245,7 @@ Or use the web-based testing dashboard at http://localhost:5001/test
 ### Frontend
 - Viewport culling - only animate visible vehicles
 - 30 FPS animation throttling
+- Location services with configurable timeout and caching
 - CSS variables for instant theme switching
 - Efficient marker management with automatic cleanup
 

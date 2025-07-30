@@ -422,6 +422,15 @@
                 this.animationFrame = null;
                 this.lastUpdateTime = Date.now();
 
+                // Location configuration
+                this.locationConfig = {
+                    defaultCenter: [37.7749, -122.4194], // SF coordinates
+                    defaultZoom: 12,                     // City-wide view
+                    userLocationZoom: 14,                // Neighborhood view
+                    geolocationTimeout: 10000,           // 10 seconds
+                    geolocationMaxAge: 300000            // 5 minutes
+                };
+
                 // Expanded filter mapping including all Bay Area Regional agencies
                 this.filters = {
                     // Existing filters (keep unchanged)
@@ -468,10 +477,90 @@
             }
 
             async init() {
-                // Initialize map
-                this.map = L.map('map').setView([37.7749, -122.4194], 12);
-                // Load and display OpenStreetMap tiles
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+                // Initialize map with default view
+                this.map = L.map('map').setView(this.locationConfig.defaultCenter, this.locationConfig.defaultZoom);
+                
+                // Load dark mode map tiles with visible street names and grid
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(this.map);
+                
+                // Add bright labels overlay for readable street names
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+                    subdomains: 'abcd',
+                    maxZoom: 20,
+                    pane: 'overlayPane'
+                }).addTo(this.map);
+
+                // Try to center map on user's location
+                this.requestUserLocation();
+            }
+
+            requestUserLocation() {
+                // Check if geolocation is supported
+                if (!navigator.geolocation) {
+                    console.log('Geolocation not supported, using default location');
+                    return;
+                }
+
+                // Request user's current location with configured options
+                navigator.geolocation.getCurrentPosition(
+                    (position) => this.handleLocationSuccess(position),
+                    (error) => this.handleLocationError(error),
+                    this.getGeolocationOptions()
+                );
+            }
+
+            handleLocationSuccess(position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                
+                console.log(`Centering map on user location: ${userLat}, ${userLng}`);
+                
+                // Center map on user location with configured zoom
+                this.map.setView([userLat, userLng], this.locationConfig.userLocationZoom);
+                
+                // Add user location marker
+                this.addUserLocationMarker(userLat, userLng);
+            }
+
+            handleLocationError(error) {
+                const errorMessages = {
+                    [error.PERMISSION_DENIED]: 'Location access denied by user',
+                    [error.POSITION_UNAVAILABLE]: 'Location information unavailable',
+                    [error.TIMEOUT]: 'Location request timed out'
+                };
+                
+                const message = errorMessages[error.code] || 'Location access denied';
+                console.log(`${message}, using default location`);
+                // Map stays at default location
+            }
+
+            getGeolocationOptions() {
+                return {
+                    enableHighAccuracy: false,                    // Faster response, less battery
+                    timeout: this.locationConfig.geolocationTimeout,
+                    maximumAge: this.locationConfig.geolocationMaxAge
+                };
+            }
+
+            addUserLocationMarker(lat, lng) {
+                const userIcon = this.createUserLocationIcon();
+                
+                L.marker([lat, lng], { icon: userIcon })
+                    .addTo(this.map)
+                    .bindPopup("📍 You are here");
+            }
+
+            createUserLocationIcon() {
+                return L.divIcon({
+                    className: 'user-location-icon',
+                    html: '<div class="user-location-dot"></div>',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                });
             }
             async initializeRouteManager() {
                 // Initialize route-aware animation

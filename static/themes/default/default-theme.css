@@ -282,6 +282,16 @@ body {
 .express-bus { background: #ff8800; }
 .regional-ferry { background: #00aa88; }
 
+/* User location marker */
+.user-location-dot {
+    background: #4facfe;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
 /* Bay Area Regions nested collapse functionality */
 .bay-area-section .bay-area-header {
     cursor: pointer;

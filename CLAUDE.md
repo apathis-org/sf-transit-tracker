@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SF Transit Tracker is a real-time Bay Area transit monitoring system built with Flask and WebSocket technology. It integrates multiple transit APIs (511.org, BART) to track 500+ vehicles across SF, displaying them on an interactive map with smooth animations and dual theme support (TRON/Default).
+SF Transit Tracker is a real-time Bay Area transit monitoring system built with Flask and Socket.IO technology. It integrates multiple transit APIs (511.org, BART) to track 1,500+ vehicles across the entire Bay Area, displaying them on an interactive map with smooth animations, location-based auto-zoom, and dark theme support.
 
 ## Architecture
 
@@ -15,10 +15,12 @@ SF Transit Tracker is a real-time Bay Area transit monitoring system built with 
 - **GTFS Integration**: Downloads and processes route shapes from multiple sources
 
 ### Frontend (Vanilla JS + Leaflet)
-- **Core**: `SimpleTransitTracker` class handles map, vehicles, animations, themes
-- **Real-time**: WebSocket primary, HTTP polling fallback
+- **Core**: `TransitTracker` class handles map, vehicles, animations, location
+- **Real-time**: Socket.IO HTTP polling for connection tracking
 - **Animation System**: Physics-based vehicle movement with 30 FPS throttling
-- **Theme System**: CSS custom properties enable instant TRON ↔ Default switching
+- **Location Services**: Geolocation API with smart auto-zoom to user's neighborhood
+- **User Location**: "You are here" marker with configurable zoom levels
+- **Theme System**: Dark mode with readable street names and labels
 
 ### Key Data Flow
 1. Background thread fetches from APIs every 30s
@@ -65,6 +67,7 @@ python tests/test_511.py
 ### Frontend Optimizations
 - **Animation Throttling**: 30 FPS cap prevents performance issues
 - **Viewport Culling**: Only animates visible vehicles
+- **Location Services**: Configurable timeout and caching for geolocation
 - **CSS Variables**: Eliminates duplicate theme styles
 - **Tile Layer Caching**: Instant theme switching
 - **Memory Management**: Automatic cleanup of removed vehicles
@@ -77,10 +80,12 @@ python tests/test_511.py
 
 ## Key Files
 
-- `app.py` - Main Flask application with all API integrations
-- `templates/index.html` - Primary web interface with map and controls
+- `app.py` - Main Flask application with all API integrations  
+- `templates/index_clean.html` - Primary web interface with map and controls (production)
+- `templates/index.html` - Legacy monolithic template (available at /original)
+- `static/js/TransitTracker.js` - Main application class with location services
 - `static/routeManager.js` - GTFS route data management
-- `static/*.css` - Modular theme and component styles
+- `static/themes/default/default-theme.css` - Modular theme and component styles
 - `tests/enhanced_test_apis.py` - Comprehensive API testing script
 - `templates/test.html` - Interactive API testing dashboard
 
@@ -118,6 +123,7 @@ The project includes comprehensive testing tools:
 - Frontend uses vanilla JavaScript (no build system required)
 - Real-time updates via Socket.IO HTTP polling (NOT WebSockets)
 - Vehicle animations use physics-based interpolation for smooth movement
+- Location-based auto-zoom detects user's location and centers map
 - All API calls include proper error handling and retry logic
 - Theme switching preserves all vehicle states and positions
 
