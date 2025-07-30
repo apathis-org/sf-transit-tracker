@@ -277,6 +277,44 @@ body {
 .ferry { background: #006a4e; }
 .bus { background: #4CAF50; }
 
+/* New vehicle types for Bay Area Regional agencies */
+.train { background: #0066cc; }
+.express-bus { background: #ff8800; }
+.regional-ferry { background: #00aa88; }
+
+/* Bay Area Regions nested collapse functionality */
+.bay-area-section .bay-area-header {
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+    transition: all 0.2s ease;
+}
+
+.bay-area-section .bay-area-header:hover {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+
+.bay-area-section .collapse-icon {
+    float: right;
+    transition: transform 0.3s ease;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.bay-area-section.expanded .collapse-icon {
+    transform: rotate(90deg);
+}
+
+.bay-area-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.bay-area-content .filter-item {
+    padding-left: 12px; /* Indent nested items */
+}
+
 .stats {
     display: grid;
     grid-template-columns: 1fr 1fr;

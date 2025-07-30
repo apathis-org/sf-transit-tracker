@@ -21,15 +21,41 @@ class TransitTracker {
         this.animationFrame = null;
         this.lastUpdateTime = Date.now();
 
-        // Simple filter mapping
+        // Expanded filter mapping including all Bay Area Regional agencies
         this.filters = {
+            // Existing filters (keep unchanged)
             'muni-bus': { agency: 'SFMTA', type: 'muni-bus' },
             'light-rail': { agency: 'SFMTA', type: 'light-rail' },
             'cable-car': { agency: 'SFMTA', type: 'cable-car' },
             'bart-train': { agency: 'BART', type: 'bart-train' },
             'gg-bus': { agency: 'Golden Gate', type: 'bus' },
             'ferry': { agency: 'Golden Gate', type: 'ferry' },
-            'ac-bus': { agency: 'AC Transit', type: 'bus' }
+            'ac-bus': { agency: 'AC Transit', type: 'bus' },
+            
+            // New Bay Area Regional filters
+            'caltrain': { agency: 'Caltrain', type: 'train' },
+            'capitol-corridor': { agency: 'Capitol Corridor', type: 'train' },
+            'ace-train': { agency: 'Altamont Corridor Express', type: 'train' },
+            'smart-rail': { agency: 'SMART', type: 'train' },
+            'sf-bay-ferry': { agency: 'SF Bay Ferry', type: 'ferry' },
+            'vta': { agency: 'VTA', type: 'bus' },
+            'samtrans': { agency: 'SamTrans', type: 'bus' },
+            'tri-delta': { agency: 'Tri Delta Transit', type: 'bus' },
+            'county-connection': { agency: 'County Connection', type: 'bus' },
+            'marin-transit': { agency: 'Marin Transit', type: 'bus' },
+            'dumbarton-express': { agency: 'Dumbarton Express', type: 'bus' },
+            'emery-go-round': { agency: 'Emery Go-Round', type: 'bus' },
+            'fs-transit': { agency: 'FS Transit', type: 'bus' },
+            'mv-transportation': { agency: 'MV Transportation', type: 'bus' },
+            'presidio-go': { agency: 'Presidio Go', type: 'bus' },
+            'sonoma-county': { agency: 'Sonoma County Transit', type: 'bus' },
+            'sonoma-county-sr': { agency: 'Sonoma County Transit (SR)', type: 'bus' },
+            'soltrans': { agency: 'SolTrans', type: 'bus' },
+            'union-city': { agency: 'Union City Transit', type: 'bus' },
+            'vacaville': { agency: 'Vacaville City Coach', type: 'bus' },
+            'vine-transit': { agency: 'Vine Transit', type: 'bus' },
+            'westcat': { agency: 'WestCAT', type: 'bus' },
+            'wheels': { agency: 'Wheels', type: 'bus' }
         };
 
         this.init();
@@ -56,6 +82,7 @@ class TransitTracker {
         await this.initializeRouteManager();
         this.setupFilters();
         this.setupFilterToggle();
+        this.setupBayAreaToggle();
         this.connectSocket();
         this.startAnimationLoop();
     }
@@ -135,6 +162,33 @@ class TransitTracker {
                 }
             });
         }, 100);
+    }
+
+    setupBayAreaToggle() {
+        const bayAreaToggle = document.getElementById('bay-area-toggle');
+        const bayAreaContent = document.getElementById('bay-area-content');
+        const bayAreaSection = document.querySelector('.bay-area-section');
+
+        if (bayAreaToggle && bayAreaContent && bayAreaSection) {
+            bayAreaToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isCurrentlyExpanded = bayAreaSection.classList.contains('expanded');
+                
+                if (isCurrentlyExpanded) {
+                    // Collapse
+                    bayAreaSection.classList.remove('expanded');
+                    bayAreaContent.style.display = 'none';
+                } else {
+                    // Expand
+                    bayAreaSection.classList.add('expanded');
+                    bayAreaContent.style.display = 'block';
+                }
+            });
+        } else {
+            console.error('Bay Area toggle elements not found!');
+        }
     }
 
     connectSocket() {
@@ -220,8 +274,7 @@ class TransitTracker {
         data.vehicles.forEach(vehicleData => {
             if (!vehicleData.lat || !vehicleData.lng) return;
             
-            // EXCLUDE Regional (RG) vehicles entirely - they are duplicates and not shown in original
-            if (vehicleData.agency === 'RG') return;
+            // Note: RG vehicles are now included as Bay Area Regional agencies
 
             currentVehicleIds.add(vehicleData.id);
             
@@ -262,17 +315,51 @@ class TransitTracker {
 
     getVehicleType(vehicleData) {
         // Return the filter key that matches this vehicle
-        // This must match the filter IDs in the HTML
+        // This must match the filter IDs in the HTML and expanded for Bay Area agencies
         
+        // BART
         if (vehicleData.agency === 'BART') return 'bart-train';
+        
+        // Golden Gate
         if (vehicleData.agency === 'Golden Gate' && vehicleData.type === 'ferry') return 'ferry';
         if (vehicleData.agency === 'Golden Gate' && vehicleData.type === 'bus') return 'gg-bus';
+        
+        // AC Transit  
         if (vehicleData.agency === 'AC Transit' && vehicleData.type === 'bus') return 'ac-bus';
         
         // SFMTA vehicles
         if (vehicleData.agency === 'SFMTA' && vehicleData.type === 'light-rail') return 'light-rail';
         if (vehicleData.agency === 'SFMTA' && vehicleData.type === 'cable-car') return 'cable-car';
         if (vehicleData.agency === 'SFMTA' && vehicleData.type === 'muni-bus') return 'muni-bus';
+        
+        // Bay Area Regional agencies - Train services
+        if (vehicleData.agency === 'Caltrain') return 'caltrain';
+        if (vehicleData.agency === 'Capitol Corridor') return 'capitol-corridor';
+        if (vehicleData.agency === 'Altamont Corridor Express') return 'ace-train';
+        if (vehicleData.agency === 'SMART') return 'smart-rail';
+        
+        // Bay Area Regional agencies - Ferry services
+        if (vehicleData.agency === 'SF Bay Ferry') return 'sf-bay-ferry';
+        
+        // Bay Area Regional agencies - Bus services
+        if (vehicleData.agency === 'VTA') return 'vta';
+        if (vehicleData.agency === 'SamTrans') return 'samtrans';
+        if (vehicleData.agency === 'Tri Delta Transit') return 'tri-delta';
+        if (vehicleData.agency === 'County Connection') return 'county-connection';
+        if (vehicleData.agency === 'Marin Transit') return 'marin-transit';
+        if (vehicleData.agency === 'Dumbarton Express') return 'dumbarton-express';
+        if (vehicleData.agency === 'Emery Go-Round') return 'emery-go-round';
+        if (vehicleData.agency === 'FS Transit') return 'fs-transit';
+        if (vehicleData.agency === 'MV Transportation') return 'mv-transportation';
+        if (vehicleData.agency === 'Presidio Go') return 'presidio-go';
+        if (vehicleData.agency === 'Sonoma County Transit') return 'sonoma-county';
+        if (vehicleData.agency === 'Sonoma County Transit (SR)') return 'sonoma-county-sr';
+        if (vehicleData.agency === 'SolTrans') return 'soltrans';
+        if (vehicleData.agency === 'Union City Transit') return 'union-city';
+        if (vehicleData.agency === 'Vacaville City Coach') return 'vacaville';
+        if (vehicleData.agency === 'Vine Transit') return 'vine-transit';
+        if (vehicleData.agency === 'WestCAT') return 'westcat';
+        if (vehicleData.agency === 'Wheels') return 'wheels';
         
         // Default fallback
         return vehicleData.type || 'muni-bus';
@@ -291,10 +378,47 @@ class TransitTracker {
             return 'muni-bus';
         }
         
+        // BART
         if (vehicleData.agency === 'BART') return 'bart-train';
+        
+        // Golden Gate
         if (vehicleData.agency === 'Golden Gate' && vehicleData.type === 'ferry') return 'ferry';
         if (vehicleData.agency === 'Golden Gate' && vehicleData.type === 'bus') return 'bus';
+        
+        // AC Transit
         if (vehicleData.agency === 'AC Transit' && vehicleData.type === 'bus') return 'bus';
+        
+        // Bay Area Regional - Train services (use train CSS class)
+        if (vehicleData.agency === 'Caltrain') return 'train';
+        if (vehicleData.agency === 'Capitol Corridor') return 'train';
+        if (vehicleData.agency === 'Altamont Corridor Express') return 'train';
+        if (vehicleData.agency === 'SMART') return 'train';
+        
+        // Bay Area Regional - Ferry services 
+        if (vehicleData.agency === 'SF Bay Ferry') return 'regional-ferry';
+        
+        // Bay Area Regional - Express bus services
+        if (vehicleData.type === 'express-bus') return 'express-bus';
+        
+        // Bay Area Regional - Regular bus services (use generic bus class)
+        if (vehicleData.agency === 'VTA') return 'bus';
+        if (vehicleData.agency === 'SamTrans') return 'bus';
+        if (vehicleData.agency === 'Tri Delta Transit') return 'bus';
+        if (vehicleData.agency === 'County Connection') return 'bus';
+        if (vehicleData.agency === 'Marin Transit') return 'bus';
+        if (vehicleData.agency === 'Dumbarton Express') return 'bus';
+        if (vehicleData.agency === 'Emery Go-Round') return 'bus';
+        if (vehicleData.agency === 'FS Transit') return 'bus';
+        if (vehicleData.agency === 'MV Transportation') return 'bus';
+        if (vehicleData.agency === 'Presidio Go') return 'bus';
+        if (vehicleData.agency === 'Sonoma County Transit') return 'bus';
+        if (vehicleData.agency === 'Sonoma County Transit (SR)') return 'bus';
+        if (vehicleData.agency === 'SolTrans') return 'bus';
+        if (vehicleData.agency === 'Union City Transit') return 'bus';
+        if (vehicleData.agency === 'Vacaville City Coach') return 'bus';
+        if (vehicleData.agency === 'Vine Transit') return 'bus';
+        if (vehicleData.agency === 'WestCAT') return 'bus';
+        if (vehicleData.agency === 'Wheels') return 'bus';
         
         // Default fallback - use the vehicle's type directly
         return vehicleData.type || 'bus';

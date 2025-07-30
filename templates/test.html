@@ -292,6 +292,35 @@
             padding: 8px 16px;
             margin-left: 5px;
         }
+
+        .info-box {
+            background: rgba(79, 172, 254, 0.15);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-box h3 {
+            color: #4facfe;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+
+        .info-box li {
+            margin-bottom: 6px;
+        }
     </style>
 </head>
 <body>
@@ -305,6 +334,16 @@
                 <button class="control-button" onclick="toggleLiveMode()">📡 Toggle Live Mode</button>
                 <button class="control-button" onclick="exportResults()">💾 Export Results</button>
             </div>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 Testing vs Production Note</h3>
+            <ul>
+                <li>This dashboard tests all 4 individual API endpoints (SF, GG, AC, RG) for comprehensive validation</li>
+                <li>Production app uses optimized 2-call approach (SF + RG only) for 50% fewer API calls</li>
+                <li>Same data coverage: GG and AC vehicles are included in the RG (Regional) feed</li>
+                <li>All endpoints tested here remain valid - this ensures our optimization assumptions are correct</li>
+            </ul>
         </div>
 
         <div class="test-grid">

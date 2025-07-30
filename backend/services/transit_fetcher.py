@@ -39,7 +39,7 @@ class TransitDataFetcher:
     def fetch_511_gtfs_data(self, api_key: str) -> List[Vehicle]:
         """Fetch GTFS-Realtime data from 511.org"""
         vehicles = []
-        agencies = ['SF', 'GG', 'AC', 'RG']  # SFMTA, Golden Gate, AC Transit, Regional
+        agencies = ['SF', 'RG']  # SFMTA, Regional (includes all Bay Area agencies)
 
         for agency in agencies:
             try:
@@ -95,7 +95,21 @@ class TransitDataFetcher:
                     route_id = vehicle_data.vehicle.id
                     logger.debug(f"Vehicle {vehicle_data.vehicle.id} using ID as route: {route_id}")
             
-            vehicle_type = self._get_vehicle_type(route_id, agency)
+            # For RG (Regional) feed, extract actual agency from route_id
+            actual_agency = agency
+            if agency == 'RG':
+                if ':' in route_id:
+                    # RG feed format: "AGENCY:ROUTE" (e.g., "CT:123", "VTA:22")
+                    agency_code, route_part = route_id.split(':', 1)
+                    actual_agency = agency_code
+                    route_id = route_part  # Use just the route part
+                    logger.debug(f"RG vehicle {vehicle_data.vehicle.id}: extracted agency={agency_code}, route={route_part}")
+                else:
+                    # Fallback for RG vehicles without colon - log and use 'RG' as agency
+                    logger.warning(f"RG vehicle {vehicle_data.vehicle.id} has route_id without colon: {route_id}")
+                    actual_agency = 'RG'  # Will be mapped by _get_agency_name()
+            
+            vehicle_type = self._get_vehicle_type(route_id, actual_agency)
 
             # Extract individual vehicle timestamp if available, fallback to current time
             if vehicle_data.HasField('timestamp'):
@@ -120,7 +134,7 @@ class TransitDataFetcher:
                 lng=position.longitude,
                 heading=position.bearing if position.HasField('bearing') else 0.0,
                 speed=position.speed * 2.237 if position.HasField('speed') else 15.0,  # m/s to mph
-                agency=self._get_agency_name(agency),
+                agency=self._get_agency_name(actual_agency),
                 last_update=vehicle_last_update
             )
         except Exception as e:
@@ -212,7 +226,7 @@ class TransitDataFetcher:
         return vehicles
 
     def _get_vehicle_type(self, route_id: str, agency: str) -> str:
-        """Determine vehicle type based on route and agency"""
+        """Determine vehicle type based on route and agency - expanded for Bay Area Regional"""
         if agency == 'SF':
             if route_id in ['J', 'K', 'L', 'M', 'N', 'T']:
                 return 'light-rail'
@@ -222,6 +236,17 @@ class TransitDataFetcher:
                 return 'muni-bus'
         elif agency == 'GG':
             return 'ferry' if 'ferry' in route_id.lower() else 'bus'
+        # Bay Area Regional agencies
+        elif agency in ['CT', 'AM', 'CE', 'SA']:  # Train agencies
+            return 'train'
+        elif agency == 'SB':  # SF Bay Ferry
+            return 'ferry'
+        elif agency in ['3D', 'CC', 'WC']:  # Agencies with express buses
+            # Check if route indicates express service
+            if 'express' in route_id.lower() or 'x' in route_id.lower():
+                return 'express-bus'
+            else:
+                return 'bus'
         else:
             return 'bus'
 
@@ -232,23 +257,58 @@ class TransitDataFetcher:
         return route_id.replace('_', '').replace('-', '')
 
     def _get_agency_name(self, agency_code: str) -> str:
-        """Get full agency name"""
+        """Get full agency name - expanded to include all Bay Area Regional agencies"""
         names = {
             'SF': 'SFMTA',
-            'GG': 'Golden Gate',
-            'AC': 'AC Transit'
+            'GG': 'Golden Gate', 
+            'AC': 'AC Transit',
+            'RG': 'Regional',
+            # Bay Area Regional agencies from RG feed
+            '3D': 'Tri Delta Transit',
+            'AM': 'Capitol Corridor',
+            'CC': 'County Connection', 
+            'CE': 'Altamont Corridor Express',
+            'CT': 'Caltrain',
+            'DE': 'Dumbarton Express',
+            'EM': 'Emery Go-Round',
+            'FS': 'FS Transit',
+            'MA': 'Marin Transit',
+            'MV': 'MV Transportation',
+            'PG': 'Presidio Go',
+            'SA': 'SMART',
+            'SB': 'SF Bay Ferry',
+            'SC': 'VTA',
+            'SM': 'SamTrans',
+            'SO': 'Sonoma County Transit',
+            'SR': 'Sonoma County Transit (SR)',
+            'ST': 'SolTrans',
+            'UC': 'Union City Transit',
+            'VC': 'Vacaville City Coach',
+            'VN': 'Vine Transit',
+            'WC': 'WestCAT',
+            'WH': 'Wheels'
         }
-        return names.get(agency_code, agency_code)
+        mapped_name = names.get(agency_code, agency_code)
+        if mapped_name == agency_code and agency_code not in names:
+            logger.warning(f"Unknown agency code encountered: {agency_code} - using as-is")
+        return mapped_name
 
     def fetch_all_data(self) -> Dict[str, Vehicle]:
-        """Fetch data from all sources"""
+        """Fetch data from all sources with deduplication"""
         all_vehicles = {}
+        sf_vehicle_ids = set()
 
         # Fetch from 511.org (primary data source)
         if self.api_keys['SF_511'] != 'YOUR_511_API_KEY':
             vehicles_511 = self.fetch_511_gtfs_data(self.api_keys['SF_511'])
             for vehicle in vehicles_511:
                 all_vehicles[vehicle.id] = vehicle
+                
+                # Track SF vehicle IDs for deduplication
+                if vehicle.agency == 'SFMTA':
+                    # Extract original vehicle ID from our prefixed ID
+                    original_id = vehicle.id.replace('sf-', '')
+                    sf_vehicle_ids.add(original_id)
 
         # NextMuni integration removed - 511.org now provides comprehensive SFMTA data
 
@@ -257,6 +317,22 @@ class TransitDataFetcher:
             vehicles_bart = self.fetch_bart_data(self.api_keys['BART'])
             for vehicle in vehicles_bart:
                 all_vehicles[vehicle.id] = vehicle
+
+        # Deduplicate: Remove RG vehicles that are duplicates of SF vehicles
+        # SF vehicles take priority as they have more accurate route information
+        vehicles_to_remove = []
+        for vehicle_id, vehicle in all_vehicles.items():
+            if vehicle.id.startswith('rg-') and hasattr(vehicle, 'agency'):
+                # Check if this RG vehicle is actually an SF vehicle
+                original_id = vehicle.id.replace('rg-', '')
+                if original_id in sf_vehicle_ids:
+                    vehicles_to_remove.append(vehicle_id)
+                    logger.debug(f"Removing duplicate RG vehicle: {vehicle_id} (duplicate of SF vehicle)")
+
+        for vehicle_id in vehicles_to_remove:
+            del all_vehicles[vehicle_id]
+
+        logger.info(f"Deduplication removed {len(vehicles_to_remove)} duplicate vehicles")
 
         self.vehicles = all_vehicles
         self.last_update = datetime.now()
