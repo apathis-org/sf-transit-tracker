@@ -4,8 +4,21 @@ A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across
 
 ![Python](https://img.shields.io/badge/python-3.12-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.3.3-green.svg)
-![WebSocket](https://img.shields.io/badge/websocket-enabled-brightgreen.svg)
+![Socket.IO](https://img.shields.io/badge/socket.io-HTTP%20Polling-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Deployment](https://img.shields.io/badge/deployed-Fly.io-blueviolet.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
+
+## Screenshots
+
+![Real-time Bay Area Transit Map](docs/portfolio/images/hero-map-live.png)
+*Real-time visualization of 2,216 vehicles across 28 Bay Area transit agencies*
+
+![Interactive Filter Panel](docs/portfolio/images/filters-in-action.png)
+*Hierarchical filtering system with live vehicle counts by agency and type*
+
+![API Testing Dashboard](docs/portfolio/images/testing-dashboard.png)
+*Comprehensive testing infrastructure for multi-agency API validation and debugging*
 
 ## 🎯 Features
 
@@ -22,6 +35,7 @@ A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across
 - **Interactive Filters**: Show/hide specific transit types
 - **Location-based Auto-zoom**: Automatically centers map on user's location
 - **Route Visualization**: Display GTFS route shapes on the map
+- **Comprehensive Testing Dashboard**: Interactive API testing interface at `/test` endpoint with route-level analysis, response time monitoring, and data validation
 
 ## 🚀 Quick Start
 
@@ -36,7 +50,7 @@ A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/sf-transit-tracker.git
+git clone https://github.com/apathi/sf-transit-tracker.git
 cd sf-transit-tracker
 ```
 
@@ -124,8 +138,7 @@ sf-transit-tracker/
 ├── app.py                      # Main Flask application (modular, ~100 lines)
 ├── requirements.txt            # Python dependencies
 ├── .env.example               # Environment variables template
-├── CLAUDE.md                  # AI assistant instructions
-├── backend/                   # Backend modules (NEW - modular architecture)
+├── backend/                   # Backend modules
 │   ├── models/
 │   │   ├── vehicle.py        # Vehicle dataclass & models
 │   │   └── gtfs.py          # GTFS data processing
@@ -138,8 +151,8 @@ sf-transit-tracker/
 │       └── websocket.py     # WebSocket handlers
 ├── static/                    # Frontend assets
 │   ├── js/
-│   │   └── TransitTracker.js    # Modular JavaScript class (NEW)
-│   ├── themes/                  # Theme system (NEW)
+│   │   └── TransitTracker.js    # Modular JavaScript class
+│   ├── themes/                  # Theme system
 │   │   ├── default/
 │   │   │   └── default-theme.css  # Clean default styling
 │   │   └── tron/                  # TRON theme (preserved for future)
@@ -148,18 +161,24 @@ sf-transit-tracker/
 │   │       └── tron-animations.css
 │   └── routeManager.js          # GTFS route management
 ├── templates/                   # HTML templates
-│   ├── index.html              # Original monolithic version
-│   ├── index_clean.html        # NEW - Modular version (default route)
+│   ├── index.html              # Main application interface
 │   ├── test.html               # API testing dashboard
 │   └── data_monitor.html       # Real-time data monitor
 ├── tests/                      # Test scripts
 │   ├── enhanced_test_apis.py   # Comprehensive API tests
 │   └── test_511.py             # 511.org connectivity test
-├── docs/                       # Documentation
-│   ├── REFACTORING_PLAN.md     # Detailed refactoring progress
-│   └── TESTING_STRATEGY.md     # Testing approach
 └── data/                       # GTFS data storage (auto-created)
 ```
+
+## 🏗️ Architecture
+
+### System Architecture
+
+![Architecture Flow Diagram](docs/portfolio/diagrams/architecture-flow.mmd)
+
+### Tech Stack
+
+![Tech Stack Diagram](docs/portfolio/diagrams/tech-stack-visual.mmd)
 
 ## 🎨 Themes
 
@@ -192,11 +211,6 @@ The application supports two visual themes:
 - `GET /test` - API testing dashboard
 - `GET /data_monitor` - Real-time data monitoring
 
-### WebSocket Events
-- `connect` - Client connection established
-- `request_update` - Client requests latest data
-- `vehicle_update` - Server broadcasts vehicle positions
-
 ## 🧪 Testing
 
 Run the comprehensive API test suite:
@@ -220,7 +234,7 @@ Or use the web-based testing dashboard at http://localhost:5001/test
 - **BART API**: Real-time train positions (simulated from ETD data)
 - **GTFS Static Data**: Route shapes from multiple sources with fallback chain
 
-## 🆕 Recent Improvements (Phase 2 Refactoring)
+## 🆕 Recent Improvements
 
 ### Architecture Enhancements
 - **Modular Backend**: Split monolithic `app.py` (1500+ lines) into focused modules (~100 lines)
@@ -288,11 +302,6 @@ Edit the CSS custom properties in `static/main.css`:
 - Reduce number of active vehicle types using filters
 - Check browser performance profiler
 - Ensure 30 FPS throttling is working
-
-### WebSocket connection failures
-- Application automatically falls back to HTTP polling
-- Check for firewall/proxy blocking WebSocket connections
-- Verify Flask-SocketIO is properly installed
 
 ## 📝 License
 

@@ -1,0 +1,49 @@
+```mermaid
+graph TB
+    subgraph Frontend["🎨 FRONTEND LAYER"]
+        F1[JavaScript - Vanilla]
+        F2[Leaflet.js - Interactive Maps]
+        F3[CSS Animations - 30 FPS]
+        F4[Socket.IO Client - HTTP Long Polling]
+    end
+
+    subgraph RealTime["⚡ REAL-TIME COMMUNICATION LAYER"]
+        RT1[Flask-SocketIO<br/>HTTP Long Polling]
+        RT2[Connection-Based API Optimization]
+        RT3[NOT WebSockets - HTTP Polling]
+    end
+
+    subgraph Backend["🔧 BACKEND LAYER"]
+        B1[Python 3.12 + Flask]
+        B2[Flask-SocketIO]
+        B3[Background Threading]
+        B4[Data Normalization]
+        B5[GTFS-Realtime Protobuf Parsing]
+    end
+
+    subgraph DataSources["📡 DATA SOURCES LAYER"]
+        DS1[511.org - GTFS-Realtime]
+        DS2[BART API - XML]
+        DS3[Transit.land - GTFS Static]
+        DS4[26 Transit Agencies]
+        DS5[1,700+ Vehicles]
+    end
+
+    subgraph Infrastructure["🏗️ INFRASTRUCTURE LAYER"]
+        I1[Docker Containerization]
+        I2[Fly.io Deployment]
+        I3[Gunicorn + Gevent Workers<br/>Multi-Worker Architecture]
+        I4[Health Monitoring + Logging]
+    end
+
+    Frontend <-->|HTTP Polling| RealTime
+    RealTime <-->|Server Events| Backend
+    Backend <-->|API Calls| DataSources
+    Backend -->|Runs On| Infrastructure
+
+    style Frontend fill:#2d3748,stroke:#4299e1,stroke-width:3px,color:#fff
+    style RealTime fill:#2d3748,stroke:#48bb78,stroke-width:3px,color:#fff
+    style Backend fill:#2d3748,stroke:#ed8936,stroke-width:3px,color:#fff
+    style DataSources fill:#2d3748,stroke:#805ad5,stroke-width:3px,color:#fff
+    style Infrastructure fill:#2d3748,stroke:#f56565,stroke-width:3px,color:#fff
+```

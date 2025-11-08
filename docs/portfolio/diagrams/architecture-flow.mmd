@@ -1,0 +1,30 @@
+```mermaid
+flowchart TD
+    A[User Browser<br/>JavaScript + Leaflet.js] -->|Socket.IO Client<br/>HTTP Long Polling| B[Flask-SocketIO Server<br/>HTTP Long Polling, NOT WebSockets]
+
+    B -->|Connection Events| C[Background Updater Thread<br/>30-second cycles]
+
+    C -->|Fetch Data| D[Transit Data Fetcher<br/>Multi-API Integration Layer]
+
+    D --> E1[511.org<br/>GTFS-RT<br/>26 Agencies]
+    D --> E2[BART API<br/>XML<br/>Train Positions]
+    D --> E3[Transit.land<br/>GTFS<br/>Route Shapes]
+
+    E1 --> F[Data Normalization]
+    E2 --> F
+    E3 --> F
+
+    F -->|Vehicle Objects<br/>Unified Format| G[Broadcast via Socket.IO<br/>bulk_update event]
+
+    G -->|HTTP Long Polling| A
+
+    style A fill:#2d3748,stroke:#4299e1,stroke-width:2px,color:#fff
+    style B fill:#2d3748,stroke:#4299e1,stroke-width:2px,color:#fff
+    style C fill:#2d3748,stroke:#48bb78,stroke-width:2px,color:#fff
+    style D fill:#2d3748,stroke:#ed8936,stroke-width:2px,color:#fff
+    style E1 fill:#1a202c,stroke:#805ad5,stroke-width:2px,color:#fff
+    style E2 fill:#1a202c,stroke:#805ad5,stroke-width:2px,color:#fff
+    style E3 fill:#1a202c,stroke:#805ad5,stroke-width:2px,color:#fff
+    style F fill:#2d3748,stroke:#48bb78,stroke-width:2px,color:#fff
+    style G fill:#2d3748,stroke:#4299e1,stroke-width:2px,color:#fff
+```

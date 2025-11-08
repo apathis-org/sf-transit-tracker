@@ -96,11 +96,6 @@ app.register_blueprint(test_bp)
 @app.route('/')
 def index():
     """Serve the main page"""
-    return render_template('index_clean.html')
-
-@app.route('/original')
-def original_index():
-    """Serve the original monolithic page for comparison"""
     return render_template('index.html')
 
 

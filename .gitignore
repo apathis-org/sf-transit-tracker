@@ -131,4 +131,4 @@ static/css/vehicles-default.css
 
 # Deployment artifacts
 *.tar
-*.tar.gz
+*.tar.gz.playwright-mcp/

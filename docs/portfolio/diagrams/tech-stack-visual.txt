@@ -1,0 +1,32 @@
+┌────────────────────────────────────────────────────────┐
+│                   FRONTEND LAYER                        │
+│   JavaScript (Vanilla) • Leaflet.js • CSS Animations  │
+│   Socket.IO Client (HTTP Long Polling)                │
+└────────────────────────────────────────────────────────┘
+                          ↕
+┌────────────────────────────────────────────────────────┐
+│             REAL-TIME COMMUNICATION LAYER               │
+│          Flask-SocketIO (HTTP Long Polling)            │
+│        Connection-Based API Optimization               │
+│            NOT WebSockets - HTTP Polling               │
+└────────────────────────────────────────────────────────┘
+                          ↕
+┌────────────────────────────────────────────────────────┐
+│                   BACKEND LAYER                         │
+│   Python 3.12 • Flask • Flask-SocketIO                │
+│   Background Threading • Data Normalization            │
+│   GTFS-Realtime Protobuf Parsing                      │
+└────────────────────────────────────────────────────────┘
+                          ↕
+┌────────────────────────────────────────────────────────┐
+│                 DATA SOURCES LAYER                      │
+│   511.org (GTFS-Realtime) • BART API • Transit.land   │
+│        26 Transit Agencies • 1,700+ Vehicles           │
+└────────────────────────────────────────────────────────┘
+                          ↕
+┌────────────────────────────────────────────────────────┐
+│              INFRASTRUCTURE LAYER                       │
+│   Docker Containerization • Fly.io Deployment         │
+│   Gunicorn + Gevent Workers (Multi-Worker)            │
+│   Health Monitoring • Production Logging               │
+└────────────────────────────────────────────────────────┘
