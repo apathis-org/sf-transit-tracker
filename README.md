@@ -1,6 +1,6 @@
 # SF Transit Tracker 🚌🚊🚇
 
-A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across multiple transit agencies. Built with Flask and WebSocket technology, featuring an interactive map with smooth animations and dual theme support.
+A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across multiple transit agencies. Built with Flask and Socket.IO (HTTP long polling), featuring an interactive map with smooth animations and dual theme support.
 
 ![Python](https://img.shields.io/badge/python-3.12-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.3.3-green.svg)
