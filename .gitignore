@@ -102,6 +102,7 @@ credentials/
 
 # Claude
 .claude/
+CLAUDE.md
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
