@@ -149,7 +149,7 @@ docs/PHASE_2_SUMMARY.md
 docs/socket_IO_prod_Issue_analysis.txt
 docs/UI_change_bayarea_regional_vehicles.txt
 docs/vechiicle_color_differentiate.txt
-deployment_plan.txt
-ROADMAP.md
-TODO.md
-test_rg_feed.py
+docs/deployment_plan.txt
+docs/ROADMAP.md
+docs/TODO.md
+tests/test_rg_feed.py
