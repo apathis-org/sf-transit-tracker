@@ -14,6 +14,9 @@ A real-time Bay Area transit monitoring system that tracks 1700+ vehicles across
 ![Real-time Bay Area Transit Map](docs/portfolio/images/hero-map-live.png)
 *Real-time visualization of 2,216 vehicles across 28 Bay Area transit agencies*
 
+![Vehicles in Motion](docs/portfolio/gifs/output_sf_dtn.gif)
+*Live animation of transit vehicles moving across downtown San Francisco*
+
 ![Interactive Filter Panel](docs/portfolio/images/filters-in-action.png)
 *Hierarchical filtering system with live vehicle counts by agency and type*
 
@@ -174,11 +177,90 @@ sf-transit-tracker/
 
 ### System Architecture
 
-![Architecture Flow Diagram](docs/portfolio/diagrams/architecture-flow.mmd)
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#e3f2fd','primaryTextColor':'#000','primaryBorderColor':'#1565c0','lineColor':'#1976d2','fontSize':'14px'}}}%%
+flowchart TD
+    A[User Browser<br/>JavaScript + Leaflet.js] -->|Socket.IO Client<br/>HTTP Long Polling| B[Flask-SocketIO Server<br/>HTTP Long Polling, NOT WebSockets]
+
+    B -->|Connection Events| C[Background Updater Thread<br/>30-second cycles]
+
+    C -->|Fetch Data| D[Transit Data Fetcher<br/>Multi-API Integration Layer]
+
+    D --> E1[511.org<br/>GTFS-RT<br/>26 Agencies]
+    D --> E2[BART API<br/>XML<br/>Train Positions]
+    D --> E3[Transit.land<br/>GTFS<br/>Route Shapes]
+
+    E1 --> F[Data Normalization]
+    E2 --> F
+    E3 --> F
+
+    F -->|Vehicle Objects<br/>Unified Format| G[Broadcast via Socket.IO<br/>bulk_update event]
+
+    G -->|HTTP Long Polling| A
+
+    style A fill:#bbdefb,stroke:#0d47a1,stroke-width:3px,color:#000
+    style B fill:#bbdefb,stroke:#0d47a1,stroke-width:3px,color:#000
+    style C fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+    style D fill:#ffe0b2,stroke:#e65100,stroke-width:3px,color:#000
+    style E1 fill:#4a148c,stroke:#7b1fa2,stroke-width:3px,color:#fff
+    style E2 fill:#4a148c,stroke:#7b1fa2,stroke-width:3px,color:#fff
+    style E3 fill:#4a148c,stroke:#7b1fa2,stroke-width:3px,color:#fff
+    style F fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+    style G fill:#bbdefb,stroke:#0d47a1,stroke-width:3px,color:#000
+```
 
 ### Tech Stack
 
-![Tech Stack Diagram](docs/portfolio/diagrams/tech-stack-visual.mmd)
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#e3f2fd','primaryTextColor':'#000','primaryBorderColor':'#1565c0','lineColor':'#1976d2','fontSize':'14px'}}}%%
+graph TB
+    subgraph Frontend["🎨 FRONTEND LAYER"]
+        F1[JavaScript - Vanilla]
+        F2[Leaflet.js - Interactive Maps]
+        F3[CSS Animations - 30 FPS]
+        F4[Socket.IO Client - HTTP Long Polling]
+    end
+
+    subgraph RealTime["⚡ REAL-TIME COMMUNICATION LAYER"]
+        RT1[Flask-SocketIO<br/>HTTP Long Polling]
+        RT2[Connection-Based API Optimization]
+        RT3[NOT WebSockets - HTTP Polling]
+    end
+
+    subgraph Backend["🔧 BACKEND LAYER"]
+        B1[Python 3.12 + Flask]
+        B2[Flask-SocketIO]
+        B3[Background Threading]
+        B4[Data Normalization]
+        B5[GTFS-Realtime Protobuf Parsing]
+    end
+
+    subgraph DataSources["📡 DATA SOURCES LAYER"]
+        DS1[511.org - GTFS-Realtime]
+        DS2[BART API - XML]
+        DS3[Transit.land - GTFS Static]
+        DS4[26 Transit Agencies]
+        DS5[1,700+ Vehicles]
+    end
+
+    subgraph Infrastructure["🏗️ INFRASTRUCTURE LAYER"]
+        I1[Docker Containerization]
+        I2[Fly.io Deployment]
+        I3[Gunicorn + Gevent Workers<br/>Multi-Worker Architecture]
+        I4[Health Monitoring + Logging]
+    end
+
+    Frontend <-->|HTTP Polling| RealTime
+    RealTime <-->|Server Events| Backend
+    Backend <-->|API Calls| DataSources
+    Backend -->|Runs On| Infrastructure
+
+    style Frontend fill:#bbdefb,stroke:#0d47a1,stroke-width:3px,color:#000
+    style RealTime fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+    style Backend fill:#ffe0b2,stroke:#e65100,stroke-width:3px,color:#000
+    style DataSources fill:#e1bee7,stroke:#6a1b9a,stroke-width:3px,color:#000
+    style Infrastructure fill:#ffcdd2,stroke:#c62828,stroke-width:3px,color:#000
+```
 
 ## 🎨 Themes
 

@@ -131,4 +131,15 @@ static/css/vehicles-default.css
 
 # Deployment artifacts
 *.tar
-*.tar.gz.playwright-mcp/
+*.tar.gz
+
+# Playwright MCP
+.playwright-mcp/
+
+# Temporary screenshot/GIF creation folders
+frames/
+
+# Local documentation and planning files
+docs/FOR_RECRUITERS.md
+docs/GITHUB_PORTFOLIO_PLAN.md
+docs/PORTFOLIO.md
